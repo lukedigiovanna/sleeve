@@ -22,7 +22,7 @@ import type { LibraryData } from "../types/library";
 import type { Genre } from "../types/albums";
 import type { Album, Artist, Instrument, VinylStatus } from "../types/albums";
 import { icon } from "../components/icons";
-import { escapeHtml } from "../components/html";
+import { Toast } from "./toast";
 import {
   MetadataSearchController,
   type MetadataSearch,
@@ -52,7 +52,9 @@ export class AppController {
   private readonly main = document.querySelector<HTMLElement>("main")!;
   private readonly editor =
     document.querySelector<HTMLDialogElement>("#editor")!;
-  private readonly toast = document.querySelector<HTMLElement>("#toast")!;
+  private readonly toast = new Toast(
+    document.querySelector<HTMLElement>("#toast")!,
+  );
   private readonly library: LibraryStore;
   private readonly browsingActions = new Set([
     "profile-grouping",
@@ -72,7 +74,6 @@ export class AppController {
   private readonly router: AppRouter;
   private readonly persistence: EditorPersistence;
   private viewHash: string;
-  private toastTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly dialog: DialogController;
   private readonly discovery: Discovery;
   private readonly drafts: EditorDrafts;
@@ -699,15 +700,7 @@ export class AppController {
   }
 
   private announce(message: string): void {
-    clearTimeout(this.toastTimer);
-    this.toast.innerHTML = /* HTML */ `${icon("check", 17)}<span
-        >${escapeHtml(message)}</span
-      >`;
-    this.toast.classList.add("visible");
-    this.toastTimer = setTimeout(
-      () => this.toast.classList.remove("visible"),
-      3800,
-    );
+    this.toast.announce(message);
   }
 
   private dialogFormState(): string {
@@ -812,7 +805,7 @@ export class AppController {
     this.dialog.dispose();
     this.metadataSearch.cancel();
     this.albumEditor.dispose();
-    clearTimeout(this.toastTimer);
+    this.toast.dispose();
   }
 }
 

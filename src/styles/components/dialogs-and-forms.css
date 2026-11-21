@@ -379,7 +379,8 @@ dialog::backdrop {
 .toast {
   position: fixed;
   inset: auto 21px 21px auto;
-  display: flex;
+  margin: 0;
+  border: 0;
   align-items: center;
   gap: 8px;
   max-width: calc(100% - 42px);
@@ -395,12 +396,20 @@ dialog::backdrop {
   transform: translateY(8px);
   transition:
     opacity 0.18s,
-    transform 0.18s;
-  z-index: 2;
+    transform 0.18s,
+    display 0.18s allow-discrete,
+    overlay 0.18s allow-discrete;
 }
-.toast.visible {
+.toast:popover-open {
+  display: flex;
   opacity: 1;
   transform: translateY(0);
+}
+@starting-style {
+  .toast:popover-open {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .import-suggestions {

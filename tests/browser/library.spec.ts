@@ -656,19 +656,89 @@ test("dirty editor supports continue, keep, resume, and discard", async ({
   await openAlbum(page);
   await page.locator('[data-action="edit"]').click();
   await page.locator('[name="title"]').fill("Kept draft");
-  await page.locator('#album-form [data-action="close"]').click();
-  await page.locator("[data-draft-continue]").click();
+  const editorClose = page.locator('#album-form [data-action="close"]');
+  const prompt = page.getByRole("dialog", { name: "Unsaved changes" });
+  const continueEditing = prompt.getByRole("button", {
+    name: "Continue editing",
+  });
+
+  await editorClose.click();
+  await expect(continueEditing).toBeFocused();
+  await expect(prompt.locator(".draft-actions")).toHaveCSS(
+    "flex-direction",
+    page.viewportSize()!.width <= 420 ? "column-reverse" : "row",
+  );
+  await page.mouse.click(1, 1);
+  await expect(prompt).toBeVisible();
+  await continueEditing.click();
+  await expect(prompt).not.toBeVisible();
+  await expect(editorClose).toBeFocused();
   await expect(page.locator('[name="title"]')).toHaveValue("Kept draft");
-  await page.locator('#album-form [data-action="close"]').click();
+
+  await editorClose.click();
+  await page.keyboard.press("Escape");
+  await expect(prompt).not.toBeVisible();
+  await expect(page.locator('[name="title"]')).toHaveValue("Kept draft");
+
+  await page.mouse.click(1, 1);
+  await expect(prompt).toBeVisible();
   await page.locator("[data-draft-keep]").click();
   await expect(page.locator("#editor")).not.toBeVisible();
+  const toast = page.locator("#toast");
+  await expect(toast).toHaveText("Draft kept on this device.");
   await page.getByRole("button", { name: "Resume draft" }).click();
+  await expect(toast).toHaveText("Restored from draft.");
   await expect(page.locator('[name="title"]')).toHaveValue("Kept draft");
   await page.locator('#album-form [data-action="close"]').click();
   await page.locator("[data-draft-discard]").click();
   await expect(
     page.getByRole("button", { name: "Resume draft" }),
   ).not.toBeVisible();
+});
+
+test("draft toast stays above the editor and unsaved changes popup", async ({
+  page,
+}) => {
+  await openAlbum(page);
+  const edit = page.locator('[data-action="edit"]');
+  const close = page.locator('#album-form [data-action="close"]');
+  const toast = page.locator("#toast");
+
+  await edit.click();
+  await page.locator('[name="title"]').fill("Kept draft");
+  await close.click();
+  await page.locator("[data-draft-keep]").click();
+
+  // Trying to start another edit restores the existing draft and shows a toast.
+  await edit.click();
+  await expect(toast).toContainText("Restored from draft.");
+  await expect(
+    page.locator("#editor").getByRole("status").filter({
+      hasText: "Restored from draft.",
+    }),
+  ).toBeVisible();
+
+  await close.click();
+  const prompt = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(prompt.getByRole("status")).toBeVisible();
+  await expect(toast).toHaveCSS("opacity", "1");
+
+  // Temporarily enable hit testing to check the toast paints above the backdrop.
+  expect(
+    await toast.evaluate((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      element.style.pointerEvents = "auto";
+      const hit = document.elementFromPoint(x + width / 2, y + height / 2);
+      element.style.removeProperty("pointer-events");
+      return element.contains(hit);
+    }),
+  ).toBe(true);
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#editor #toast")).toBeVisible();
+  await close.click();
+  await page.locator("[data-draft-discard]").click();
+  await expect(page.locator("#app > #toast")).toBeVisible();
 });
 
 test("navigation retains an unfinished edit", async ({ page }) => {
@@ -737,6 +807,9 @@ test("blocked draft storage keeps the dirty editor open", async ({ page }) => {
   );
   await page.locator('#album-form [data-action="close"]').click();
   await page.locator("[data-draft-keep]").click();
+  await expect(
+    page.getByRole("dialog", { name: "Unsaved changes" }).getByRole("alert"),
+  ).toHaveText("Couldn’t save the draft on this device.");
   await expect(page.locator("#editor")).toBeVisible();
   await page.locator("[data-draft-discard]").click();
 });
@@ -926,6 +999,43 @@ test("artist countries link to a shareable Library filter with collaboration mat
   await expect(page.locator("#library-count")).toHaveText("2 of 3 albums");
   await page.getByRole("button", { name: "Remove Country filter" }).click();
   await expect(page.locator("#library-count")).toHaveText("3 albums");
+});
+
+test("album artwork URL aligns with its preview and restores it from draft", async ({
+  page,
+}) => {
+  await openAlbum(page);
+  await page.locator('[data-action="edit"]').click();
+  const form = page.locator("#album-form");
+  const artwork = form.getByRole("textbox", { name: "Artwork URL" });
+  const preview = form.locator(".catalog-image-preview");
+
+  await expect(form.getByText(/Paste an image URL/)).toHaveCount(0);
+  const inputBounds = (await artwork.boundingBox())!;
+  const previewBounds = (await preview.boundingBox())!;
+  expect(previewBounds.y).toBe(inputBounds.y);
+  expect(previewBounds.height).toBe(inputBounds.height);
+  expect(previewBounds.x).toBeGreaterThan(inputBounds.x + inputBounds.width);
+
+  const url = "https://example.test/cover.svg";
+  await page.route(url, (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: /* HTML */ `<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="39"
+        height="39"
+      ></svg>`,
+    }),
+  );
+  await artwork.fill(url);
+  await expect(preview.locator("img")).toHaveAttribute("src", url);
+
+  await form.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Keep draft" }).click();
+  await page.getByRole("button", { name: "Resume draft" }).click();
+  await expect(artwork).toHaveValue(url);
+  await expect(preview.locator("img")).toHaveAttribute("src", url);
 });
 
 test("catalog artist and instrument editors validate and retain details", async ({
