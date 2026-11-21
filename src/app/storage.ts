@@ -1,3 +1,4 @@
+import { artistIdentity } from "./artistIdentity.ts";
 import { upgradeGenre } from "./genres.ts";
 import {
   isDemoAlbums,
@@ -146,7 +147,7 @@ export function readArtistCatalog(albums: Album[]): Artist[] {
         musicbrainzId: credit.musicbrainzId,
       };
       catalog.set(artist.id, artist);
-      Object.assign(credit, artist);
+      Object.assign(credit, artistIdentity(artist));
     }
   return [...catalog.values()];
 }

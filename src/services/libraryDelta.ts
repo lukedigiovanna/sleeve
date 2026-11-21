@@ -3,6 +3,7 @@ import type { Tables } from "../types/database.types";
 
 export type LibraryTable =
   | "artists"
+  | "artist_links"
   | "genres"
   | "genre_parents"
   | "instruments"
@@ -29,6 +30,7 @@ export type LibraryDelta = {
 
 const keys: { [Table in LibraryTable]: readonly (keyof DeltaRow<Table>)[] } = {
   artists: ["id"],
+  artist_links: ["id"],
   genres: ["id"],
   genre_parents: ["parent_genre_id", "child_genre_id"],
   instruments: ["id"],
@@ -44,6 +46,7 @@ const keys: { [Table in LibraryTable]: readonly (keyof DeltaRow<Table>)[] } = {
 function rows(library: LibraryData): LibraryRows {
   const result: LibraryRows = {
     artists: [],
+    artist_links: [],
     genres: [],
     genre_parents: [],
     instruments: [],
@@ -63,6 +66,14 @@ function rows(library: LibraryData): LibraryRows {
     country: a.country || null,
     musicbrainz_id: a.musicbrainzId || null,
   }));
+  result.artist_links = library.artists.flatMap((artist) =>
+    (artist.links ?? []).map((link) => ({
+      id: link.id,
+      artist_id: artist.id,
+      url: link.url,
+      label: link.label || null,
+    })),
+  );
   result.genres = library.genres.map((g) => ({
     id: g.id,
     name: g.name,
@@ -143,6 +154,7 @@ export function libraryDelta(
   const current = rows(next);
   return {
     artists: tableDelta("artists", previous, current),
+    artist_links: tableDelta("artist_links", previous, current),
     genres: tableDelta("genres", previous, current),
     genre_parents: tableDelta("genre_parents", previous, current),
     instruments: tableDelta("instruments", previous, current),

@@ -56,7 +56,7 @@ export function linkRow(link: Partial<AlbumLink> = {}): string {
     <button
       class="icon-button remove-link"
       type="button"
-      aria-label="Remove music link"
+      aria-label="Remove link"
       data-action="remove-link"
     >
       ${icon("close", 17)}

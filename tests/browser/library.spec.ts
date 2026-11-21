@@ -36,6 +36,20 @@ test("catalog album headings keep compact layout toggles on the title row", asyn
       await page.locator(`main a[href^="#${singular}/"]`).first().click();
       const heading = page.locator(".album-list-heading");
       await expect(heading).toBeVisible();
+      const metadata = heading.locator(".detail-heading");
+      if (catalog === "artists") {
+        await expect(metadata).toHaveText("Albums");
+        const profile = await page
+          .locator(".artist-page-heading")
+          .boundingBox();
+        const sectionHeading = await heading.boundingBox();
+        expect(sectionHeading!.y - (profile!.y + profile!.height)).toBeCloseTo(
+          28,
+          0,
+        );
+      } else {
+        await expect(metadata.locator(".count-pill")).toHaveText(/^\d+$/);
+      }
       const title = await heading.locator(".detail-heading").boundingBox();
       const toggle = await heading.locator(".layout-toggle").boundingBox();
       expect(toggle!.width).toBeLessThan(100);
@@ -1474,4 +1488,120 @@ test("vinyl artwork supports keyboard dismissal, current choices, and album edit
   await options.getByRole("button", { name: "Clear status" }).click();
   await reloadDemo(page);
   await expect(status).toHaveText("Not tracked");
+});
+
+test("artist links survive drafts and can be edited and removed", async ({
+  page,
+  isMobile,
+}) => {
+  await page.locator('[data-nav="artists"]').click();
+  await page.getByRole("button", { name: "Add artist" }).click();
+  const form = page.locator("#catalog-artist-form");
+  const addLink = form.getByRole("button", { name: "Add link", exact: true });
+  const urls = form.getByRole("textbox", { name: "URL", exact: true });
+  const labels = form.getByRole("textbox", { name: "Label", exact: true });
+  const save = form.getByRole("button", { name: "Save artist" });
+  const wikipedia = "https://en.wikipedia.org/wiki/Alice_Coltrane";
+  const appleMusic = "https://music.apple.com/us/artist/alice-coltrane/485970";
+
+  await form.getByLabel("Artist name").fill("Artist links test");
+  await form.getByLabel("Country code").fill("US");
+  await addLink.click();
+  await urls.nth(0).fill(wikipedia);
+  await addLink.click();
+  await urls.nth(1).fill(wikipedia);
+  await save.click();
+  await expect(form.getByRole("alert")).toHaveText(
+    "Each link must have a different URL.",
+  );
+  await urls.nth(1).fill(appleMusic);
+  await addLink.click();
+  await urls.nth(2).fill("https://example.com/bio");
+  await addLink.click();
+  const discogs = "https://www.discogs.com/artist/29986-Alice-Coltrane";
+  await urls.nth(3).fill(discogs);
+
+  await reloadDemo(page);
+  await expect(urls.nth(0)).toHaveValue(wikipedia);
+  await expect(urls.nth(1)).toHaveValue(appleMusic);
+  await save.click();
+
+  const links = page.getByRole("group", { name: "Artist links", exact: true });
+  const wikipediaLink = links.getByRole("link", { name: /Wikipedia/ });
+  await expect(wikipediaLink).toHaveAttribute("href", wikipedia);
+  await expect(links.getByRole("heading")).toHaveCount(0);
+  const label = wikipediaLink.getByText("Wikipedia");
+  await expect(label).toBeHidden();
+  const button = await wikipediaLink.boundingBox();
+  expect(button!.width).toBe(isMobile ? 28 : 22);
+  const header = page.locator(".artist-page-heading");
+  const portrait = await header.locator(".artist-portrait").boundingBox();
+  const headerBox = await header.boundingBox();
+  expect(portrait!.height).toBeCloseTo(headerBox!.height, 1);
+  if (!isMobile) {
+    await wikipediaLink.hover();
+    await expect(label).toBeVisible();
+    const tooltip = await label.boundingBox();
+    expect(tooltip!.width).toBeGreaterThan(button!.width);
+    expect(button!.y - (tooltip!.y + tooltip!.height)).toBeGreaterThanOrEqual(
+      4,
+    );
+    expect(tooltip!.x + tooltip!.width / 2).toBeCloseTo(
+      button!.x + button!.width / 2,
+      1,
+    );
+    await page.mouse.move(0, 0);
+    await page.getByRole("link", { name: "Back to artists" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(wikipediaLink).toBeFocused();
+    await expect(label).toBeVisible();
+  }
+  await expect(
+    links.getByRole("link", { name: /Apple Music/ }),
+  ).toHaveAttribute("href", appleMusic);
+
+  await expect(page.locator(".artist-details")).toContainText("US");
+  const divider = page
+    .locator(".artist-details")
+    .getByText("·", { exact: true });
+  await expect(divider).toBeVisible();
+  await expect(page.locator(".artist-page-heading .catalog-stats")).toHaveCount(
+    0,
+  );
+  await expect(links.getByRole("link", { name: /Discogs/ })).toHaveAttribute(
+    "href",
+    discogs,
+  );
+  const extra = links.getByRole("link", { name: /example.com/ });
+  await expect(extra).toBeHidden();
+  await links.getByLabel("More links").click();
+  await expect(extra).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit artist" }).click();
+  await form
+    .getByRole("button", { name: "Remove link", exact: true })
+    .nth(3)
+    .click();
+  await form
+    .getByRole("button", { name: "Remove link", exact: true })
+    .nth(2)
+    .click();
+  await labels.nth(0).fill("Biography");
+  await form
+    .getByRole("button", { name: "Remove link", exact: true })
+    .nth(1)
+    .click();
+  await save.click();
+  await reloadDemo(page);
+  await expect(links.getByRole("link")).toHaveCount(1);
+  await expect(links.getByRole("link", { name: /Biography/ })).toHaveAttribute(
+    "href",
+    wikipedia,
+  );
+
+  await page.getByRole("button", { name: "Edit artist" }).click();
+  await form.getByRole("button", { name: "Remove link", exact: true }).click();
+  await save.click();
+  await expect(links).toHaveCount(0);
+  await expect(divider).toHaveCount(0);
 });

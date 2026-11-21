@@ -29,7 +29,11 @@ async function fetchLibrary(): Promise<LibraryData> {
       readAll((from, to) =>
         supabase
           .from("artists")
-          .select("id,name,sort_name,country,musicbrainz_id,photo_url")
+          .select(
+            "id,name,sort_name,country,musicbrainz_id,photo_url,updated_at,artist_links(id,url,label)",
+          )
+          .order("created_at", { referencedTable: "artist_links" })
+          .order("id", { referencedTable: "artist_links" })
           .order("id")
           .range(from, to),
       ),
@@ -61,6 +65,8 @@ async function fetchLibrary(): Promise<LibraryData> {
       photoUrl: row.photo_url,
       country: row.country,
       musicbrainzId: row.musicbrainz_id,
+      links: row.artist_links,
+      updatedAt: new Date(row.updated_at).toISOString(),
     })),
     genres: genreRows.map((row) => ({
       id: row.id,

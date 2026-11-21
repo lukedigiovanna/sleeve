@@ -9,9 +9,11 @@ import {
   catalogFormFooter,
   field,
   catalogImageField,
+  linkRow,
 } from "../components/formFields";
+import { readLinkFields } from "./linkFields";
 import { formValue } from "./formValues";
-import { findArtist } from "./artistIdentity";
+import { artistIdentity, findArtist } from "./artistIdentity";
 import { makeId } from "./id";
 import {
   artistUrl,
@@ -72,6 +74,17 @@ function renderArtistForm(item?: Artist): string {
         Artist details apply everywhere this artist is credited. Choose their
         role separately on each album.
       </p>
+      <fieldset class="artist-link-fields">
+        <legend>Links</legend>
+        <div id="link-rows">${(item?.links ?? []).map(linkRow).join("")}</div>
+        <button
+          type="button"
+          class="button secondary compact"
+          data-action="add-link"
+        >
+          ${icon("plus", 15)} Add link
+        </button>
+      </fieldset>
       <p id="form-error" class="form-error" role="alert" hidden></p>
     </div>
     ${catalogFormFooter("Save artist")}
@@ -127,6 +140,10 @@ function readArtistForm(
       form.querySelector('[name="catalogImage"]')!,
     );
 
+  const existing = artists.find((item) => item.id === form.dataset.id);
+  const links = readLinkFields(form, formError, existing?.links ?? []);
+  if (!links) return;
+
   return {
     id: form.dataset.id || makeId(),
     name,
@@ -134,6 +151,8 @@ function readArtistForm(
     sortName: value("sortName") || null,
     country: value("country").toUpperCase() || null,
     musicbrainzId,
+    links,
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -180,11 +199,10 @@ export class ArtistFeature {
     this.artistChoices = structuredClone(this.dependencies.library.artists);
     this.selectedArtists = credits.map((credit) => {
       const existing = findArtist(this.artistChoices, credit);
-      if (!existing) {
-        const { role, position, ...artist } = credit;
-        this.artistChoices.push(artist);
-      }
-      return { ...credit, ...(existing ?? {}) };
+      if (!existing) this.artistChoices.push(artistIdentity(credit));
+      return existing
+        ? { ...credit, ...artistIdentity(existing) }
+        : { ...credit };
     });
 
     return /* HTML */ `<div class="instrument-picker">
@@ -413,7 +431,7 @@ export class ArtistFeature {
           !this.selectedArtists.some((credit) => credit.id === item.id)
         )
           this.selectedArtists.push({
-            ...item,
+            ...artistIdentity(item),
             role: "primary",
             position: this.selectedArtists.length,
           });

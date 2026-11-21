@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { reconcileLibraryTimestamps } from "../src/services/savedLibraryResult.ts";
 
 const library = () => ({
+  artists: [{ id: "artist", updatedAt: "old" }],
   albums: [
     {
       id: "a",
@@ -42,9 +43,10 @@ test("timestamp reconciliation uses the final returned album row and leaves unsa
         listened_at: "normalized",
       },
     ],
-    artists: [{ id: "unconsumed" }],
+    artists: [{ id: "artist", updated_at: "2026-11-22T12:00:00+00:00" }],
   });
   assert.equal(next.albums[0].updatedAt, "touched");
+  assert.equal(next.artists[0].updatedAt, "2026-11-22T12:00:00.000Z");
   assert.deepEqual(next.albums[0].listeningEntries[0], {
     id: "listen",
     createdAt: "created",

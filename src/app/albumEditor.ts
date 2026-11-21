@@ -1,8 +1,4 @@
-import {
-  albumSubmissionSchema,
-  importMappingsSchema,
-  musicLinkSubmissionSchema,
-} from "./formValidation";
+import { albumSubmissionSchema, importMappingsSchema } from "./formValidation";
 import {
   isAlbumEditorMode,
   type AlbumEditorMode,
@@ -17,6 +13,7 @@ import {
   field,
   linkRow,
 } from "../components/formFields";
+import { readLinkFields } from "./linkFields";
 import { formValue } from "./formValues";
 import {
   findAppleMusicAlbums,
@@ -26,16 +23,10 @@ import {
 import { commitAlbumArtists } from "./artistIdentity";
 import { makeId } from "./id";
 import type { Genre, AlbumGenre } from "../types/albums";
-import type {
-  Album,
-  AlbumArtist,
-  AlbumLink,
-  AlbumInstrument,
-} from "../types/albums";
+import type { Album, AlbumArtist, AlbumInstrument } from "../types/albums";
 import { icon } from "../components/icons";
 import { escapeHtml } from "../components/html";
 import { webUrl, cover } from "../components/presentation";
-import { focusForTyping } from "./device";
 import { matches, nameSimilarity } from "./search";
 
 import {
@@ -112,32 +103,6 @@ function readMappings(key: string): Record<string, string> {
   } catch {
     return {};
   }
-}
-
-function readMusicLinks(
-  form: HTMLFormElement,
-  formError: EditorDialog["formError"],
-): AlbumLink[] | undefined {
-  const links: AlbumLink[] = [];
-
-  for (const row of form.querySelectorAll(".link-fields")) {
-    const input = row.querySelector<HTMLInputElement>('[name="linkUrl"]')!;
-    const url = input.value.trim();
-    const label = row
-      .querySelector<HTMLInputElement>('[name="linkLabel"]')!
-      .value.trim();
-    if (!url && !label) continue;
-
-    const parsed = musicLinkSubmissionSchema.safeParse({ url, label });
-    if (!parsed.success) {
-      formError("Enter an HTTP or HTTPS URL for each music link.", input);
-      return undefined;
-    }
-
-    links.push({ id: makeId(), ...parsed.data });
-  }
-
-  return links;
 }
 
 export class AlbumEditor {
@@ -717,7 +682,7 @@ export class AlbumEditor {
         form.querySelector<HTMLInputElement>("[name=title]")!,
       );
 
-    const links = readMusicLinks(form, this.dependencies.dialog.formError);
+    const links = readLinkFields(form, this.dependencies.dialog.formError);
     if (!links) return;
 
     this.dependencies.pickers.commitInstrumentChoices();
@@ -772,7 +737,7 @@ export class AlbumEditor {
     );
     if (!album) return;
 
-    const links = readMusicLinks(form, this.dependencies.dialog.formError);
+    const links = readLinkFields(form, this.dependencies.dialog.formError);
     if (!links) return;
 
     album.links = links;
@@ -911,26 +876,6 @@ export class AlbumEditor {
         }
         break;
       }
-
-      case "add-link": {
-        const rows =
-          this.dependencies.dialog.element.querySelector<HTMLElement>(
-            "#link-rows",
-          )!;
-
-        rows.insertAdjacentHTML("beforeend", linkRow());
-        focusForTyping(
-          rows.lastElementChild!.querySelector<HTMLInputElement>("input"),
-        );
-        break;
-      }
-
-      case "remove-link":
-        button.closest(".link-fields")?.remove();
-        this.dependencies.dialog.element
-          .querySelector<HTMLElement>('[data-action="add-link"]')
-          ?.focus();
-        break;
 
       default:
         return false;

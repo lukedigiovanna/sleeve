@@ -142,3 +142,45 @@ test("parent changes send edge deltas without rewriting genres or album tags", (
     { parent_genre_id: "jazz", child_genre_id: "fusion" },
   ]);
 });
+
+test("artist link changes only affect the artist link delta", () => {
+  const before = base();
+  before.artists[0].links = [
+    { id: "first", url: "https://example.com/first", label: null },
+    { id: "removed", url: "https://example.com/removed", label: "Remove" },
+  ];
+  const next = structuredClone(before);
+  next.artists[0].links[0].label = "Updated";
+  next.artists[0].links.pop();
+  next.artists[1].links = [
+    { id: "added", url: "https://example.com/added", label: null },
+  ];
+
+  const delta = libraryDelta(before, next);
+  assert.deepEqual(delta.artists, { saved: [], deleted: [] });
+  assert.deepEqual(delta.album_links, { saved: [], deleted: [] });
+  assert.deepEqual(delta.artist_links, {
+    saved: [
+      {
+        id: "first",
+        artist_id: "x",
+        url: "https://example.com/first",
+        label: "Updated",
+      },
+      {
+        id: "added",
+        artist_id: "y",
+        url: "https://example.com/added",
+        label: null,
+      },
+    ],
+    deleted: [
+      {
+        id: "removed",
+        artist_id: "x",
+        url: "https://example.com/removed",
+        label: "Remove",
+      },
+    ],
+  });
+});
