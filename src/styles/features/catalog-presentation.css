@@ -78,6 +78,21 @@
   height: 44px;
   flex-basis: 44px;
 }
+.catalog-image-editor:is([data-artist="true"], [data-image-field="artwork"]) {
+  --image-control-size: 39px;
+  margin: 0;
+}
+.catalog-image-editor:is([data-artist="true"], [data-image-field="artwork"])
+  input {
+  height: var(--image-control-size);
+}
+.catalog-image-editor:is([data-artist="true"], [data-image-field="artwork"])
+  .catalog-image-preview
+  :is(.catalog-image, .cover) {
+  width: var(--image-control-size);
+  height: var(--image-control-size);
+  flex-basis: var(--image-control-size);
+}
 @media (max-width: 600px) {
   .instrument-catalog-row {
     display: grid;

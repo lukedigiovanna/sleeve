@@ -184,7 +184,8 @@ export class Dialog implements DialogController {
         }
         this.updateSearchDropdowns(event.target);
         this.suppressBackdropClick = false;
-        this.pointerStartedOutside = this.isOutsideDialog(event);
+        this.pointerStartedOutside =
+          event.target === this.ops.editor && this.isOutsideDialog(event);
       },
       true,
     );

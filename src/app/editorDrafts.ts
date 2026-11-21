@@ -1,5 +1,6 @@
 import { syncCountryPicker } from "../components/countryPicker";
-import { linkRow } from "../components/formFields";
+import { linkRow, updateCatalogImage } from "../components/formFields";
+import { icon } from "../components/icons";
 import type {
   Album,
   Instrument,
@@ -79,6 +80,7 @@ export class EditorDraftController implements EditorDrafts {
   private readonly lifecycle = createLifecycle();
   private readonly draftKey: string;
   private draft: Draft | undefined;
+  private readonly closePrompt = document.createElement("dialog");
   readonly state: EditorDrafts["state"] = {
     target: undefined,
     restoring: false,
@@ -95,6 +97,7 @@ export class EditorDraftController implements EditorDrafts {
     this.resumeButton.textContent = "Resume draft";
     this.resumeButton.hidden = true;
     document.querySelector(".masthead-inner")!.append(this.resumeButton);
+    this.renderClosePrompt();
     this.loadDraft();
     this.listen();
   }
@@ -122,20 +125,26 @@ export class EditorDraftController implements EditorDrafts {
   }
 
   captureDraft(): void {
+    this.storeEditorDraft(true);
+  }
+
+  private storeEditorDraft(open: boolean): boolean {
     if (
       this.state.restoring ||
       this.ops.isSaving() ||
       !this.ops.editor.open ||
       !this.state.target
     )
-      return;
+      return false;
     const form = this.ops.editor.querySelector("form");
-    if (!form) return;
+    if (!form) return false;
+
+    const previous = this.draft;
     this.draft = {
       version: 1,
       target: this.state.target,
       hash: location.hash,
-      open: true,
+      open,
       baseline: this.ops.baseline(),
       source: this.state.source,
       fields: [
@@ -152,20 +161,20 @@ export class EditorDraftController implements EditorDrafts {
       ...this.ops.serializeSelections(),
     };
     const stored = this.writeDraft();
+    if (!open && !stored) this.draft = previous;
+
     const status = this.ops.editor.querySelector("[data-draft-status]");
     const message = stored
       ? "Draft saved on this device"
       : "Draft could not be saved on this device";
     if (status && status.textContent !== message) status.textContent = message;
     this.resumeButton.hidden = true;
+    return stored;
   }
 
   beginDraft(target: DraftTarget): boolean {
     if (!this.state.restoring && this.draft && !this.ops.editor.open) {
       this.ops.resumeDraft();
-      this.ops.announce(
-        "Resume or discard your unfinished edit before starting another.",
-      );
       return false;
     }
     this.state.target = target;
@@ -174,50 +183,75 @@ export class EditorDraftController implements EditorDrafts {
   }
 
   draftCloseChoices(): void {
-    if (this.ops.editor.querySelector("[data-draft-close]")) return;
-    const panel = document.createElement("div");
-    panel.className = "dialog-body";
-    panel.dataset.draftClose = "";
-    panel.innerHTML = /* HTML */ `<p>Keep this unfinished edit for later?</p>
-      <div class="draft-actions">
-        <button type="button" class="button primary" data-draft-keep>
-          Keep draft
+    if (this.closePrompt.open) return;
+
+    this.closePrompt.querySelector("[role=alert]")!.textContent = "";
+    this.closePrompt.showModal();
+  }
+
+  private renderClosePrompt(): void {
+    this.closePrompt.className = "draft-close-dialog";
+    this.closePrompt.setAttribute("aria-labelledby", "draft-close-title");
+    this.closePrompt.setAttribute(
+      "aria-describedby",
+      "draft-close-description",
+    );
+    this.closePrompt.innerHTML = /* HTML */ `
+      <div class="draft-close-heading">
+        <h2 id="draft-close-title">Unsaved changes</h2>
+        <button
+          type="button"
+          class="icon-button"
+          aria-label="Continue editing"
+          data-draft-continue
+          autofocus
+        >
+          ${icon("close", 22)}
         </button>
+      </div>
+      <p id="draft-close-description">Keep a draft on this device?</p>
+      <p class="draft-close-error" role="alert"></p>
+      <div class="draft-actions">
         <button type="button" class="button secondary" data-draft-discard>
           Discard changes
         </button>
-        <button type="button" class="button secondary" data-draft-continue>
-          Continue editing
+        <button type="button" class="button primary" data-draft-keep>
+          Keep draft
         </button>
-      </div>`;
-    this.ops.editor.append(panel);
-    panel.querySelector("button")?.focus();
-    this.lifecycle.listen(panel).addEventListener("click", (event) => {
-      const target = event.target as HTMLElement;
-      if (target.closest("[data-draft-keep]")) {
-        this.captureDraft();
-        if (!this.draft || !this.writeDraft()) {
-          this.ops.announce(
-            "Couldn’t keep the draft. Continue editing or discard changes.",
-          );
-          return;
-        }
-        this.draft.open = false;
-        if (!this.writeDraft()) {
-          this.draft.open = true;
-          return;
-        }
-        this.state.target = undefined;
-        this.resumeButton.hidden = false;
-        this.ops.editor.close();
-      } else if (target.closest("[data-draft-discard]")) {
+      </div>
+    `;
+    this.ops.editor.after(this.closePrompt);
+
+    this.lifecycle
+      .listen(this.closePrompt.querySelector("[data-draft-continue]")!)
+      .addEventListener("click", () => this.closePrompt.close());
+    this.lifecycle
+      .listen(this.closePrompt.querySelector("[data-draft-discard]")!)
+      .addEventListener("click", () => {
         this.clearDraft();
+        this.closePrompt.close();
         this.ops.editor.close();
-      } else if (target.closest("[data-draft-continue]")) {
-        panel.remove();
-        this.ops.editor.querySelector<HTMLElement>("#dialog-title")?.focus();
-      }
+      });
+    this.lifecycle
+      .listen(this.closePrompt.querySelector("[data-draft-keep]")!)
+      .addEventListener("click", () => this.keepDraftAndClose());
+    this.lifecycle.listen(this.ops.editor).addEventListener("close", () => {
+      if (!this.ops.editor.open) this.closePrompt.close();
     });
+  }
+
+  private keepDraftAndClose(): void {
+    if (!this.storeEditorDraft(false)) {
+      this.closePrompt.querySelector("[role=alert]")!.textContent =
+        "Couldn’t save the draft on this device.";
+      return;
+    }
+
+    this.state.target = undefined;
+    this.resumeButton.hidden = false;
+    this.closePrompt.close();
+    this.ops.editor.close();
+    this.ops.announce("Draft kept on this device.");
   }
 
   restore(saved: Draft, openEditor: () => void): void {
@@ -249,6 +283,11 @@ export class EditorDraftController implements EditorDrafts {
       }
     }
     syncCountryPicker(this.ops.editor);
+    const imageInput = this.ops.editor.querySelector<HTMLInputElement>(
+      ".catalog-image-editor input",
+    );
+    if (imageInput) updateCatalogImage(imageInput);
+
     for (const row of this.ops.editor.querySelectorAll<HTMLElement>(
       "[data-suggestion-row]",
     ))
@@ -265,10 +304,9 @@ export class EditorDraftController implements EditorDrafts {
       this.state.source = saved.source;
       this.state.restoring = false;
       this.captureDraft();
-      const status = this.ops.editor.querySelector("[data-draft-status]");
-      if (status && status.textContent === "Draft saved on this device")
-        status.textContent =
-          "Your unfinished edit was restored. Draft saved on this device.";
+      if (!this.ops.editor.open) return;
+
+      this.ops.announce("Restored from draft.");
       this.ops.editor
         .querySelector<HTMLElement>("#dialog-title")
         ?.focus({ preventScroll: true });
@@ -319,6 +357,7 @@ export class EditorDraftController implements EditorDrafts {
 
   dispose(): void {
     this.lifecycle.dispose();
+    this.closePrompt.remove();
     this.resumeButton.remove();
   }
 }

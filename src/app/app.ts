@@ -22,6 +22,12 @@ export function renderApp(authenticated = false): string {
       </div>
     </footer>
     <dialog id="editor" aria-labelledby="dialog-title"></dialog>
-    <div class="toast" role="status" aria-live="polite" id="toast"></div>
+    <div
+      class="toast"
+      role="status"
+      aria-live="polite"
+      id="toast"
+      popover="manual"
+    ></div>
   `;
 }
