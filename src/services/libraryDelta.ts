@@ -1,3 +1,4 @@
+import { findCountry } from "../app/countries.ts";
 import type { LibraryData } from "../types/library";
 import type { Tables } from "../types/database.types";
 
@@ -17,7 +18,7 @@ export type LibraryTable =
 
 type DeltaRow<Table extends LibraryTable> = Omit<
   Tables<Table>,
-  "user_id" | "created_at" | "updated_at"
+  "user_id" | "created_at" | "updated_at" | "legacy_country"
 >;
 type LibraryRows = { [Table in LibraryTable]: DeltaRow<Table>[] };
 type TableDelta<Row> = {
@@ -63,7 +64,7 @@ function rows(library: LibraryData): LibraryRows {
     name: a.name,
     sort_name: a.sortName || null,
     photo_url: a.photoUrl || null,
-    country: a.country || null,
+    country: findCountry(a.country)?.id ?? null,
     musicbrainz_id: a.musicbrainzId || null,
   }));
   result.artist_links = library.artists.flatMap((artist) =>

@@ -1,7 +1,11 @@
 import type { LibraryData } from "../types/library";
 import { escapeHtml } from "./html";
 import { stars } from "./rating";
-import { categoryFields } from "../app/libraryCategoryFilters";
+import {
+  categoryFields,
+  categoryName,
+  type CategoryField,
+} from "../app/libraryCategoryFilters";
 import { renderCategoryFilter } from "./libraryCategoryFilters";
 import { icon, starPath } from "./icons";
 import {
@@ -21,6 +25,7 @@ const labels: Record<FilterField, string> = {
   releaseYear: "Release year",
   genres: "Genre",
   artists: "Artist",
+  country: "Country",
   instruments: "Instrument",
   vinylStatus: "Vinyl status",
 };
@@ -323,11 +328,10 @@ export function renderFilterChips(
           .map((status) => icon(vinylStatusIcon(status), 15))
           .join(/* HTML */ `<span>/</span>`);
       } else if ("ids" in filter) {
-        const catalog = data[field as "genres" | "artists" | "instruments"];
         description = filter.ids
           .map(
             (id) =>
-              catalog.find((item) => item.id === id)?.name ?? "Unavailable",
+              categoryName(data, field as CategoryField, id) ?? "Unavailable",
           )
           .join(field === "instruments" ? " + " : " / ");
         content = escapeHtml(description);

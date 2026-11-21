@@ -78,7 +78,7 @@ export function catalogImageField(
     data-name="${escapeHtml(name)}"
     data-image-field="${escapeHtml(fieldName)}"
   >
-    ${field(label, fieldName, url, { type: "url", placeholder: "https://…", attributes: 'maxlength="2000"', help: "Paste an image URL. Account saves store an optimized copy." })}
+    ${field(label, fieldName, url, { type: "url", placeholder: "https://…", attributes: 'maxlength="2000"', help: artist ? "" : "Paste an image URL. Account saves store an optimized copy." })}
     <div class="catalog-image-preview">
       ${fieldName === "artwork" ? cover({ artworkUrl: url }) : catalogImage(name, url, artist, categories)}
     </div>

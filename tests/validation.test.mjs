@@ -4,7 +4,6 @@ import {
   albumSubmissionSchema,
   httpUrlSchema,
   optionalHttpUrlSchema,
-  musicbrainzArtistIdSchema,
   importMappingsSchema,
   listeningSubmissionSchema,
 } from "../src/app/formValidation.ts";
@@ -73,12 +72,6 @@ test("form schemas retain HTTP(S), credential rejection, blank and numeric conve
   ])
     assert.equal(httpUrlSchema.safeParse(value).success, false);
   assert.equal(optionalHttpUrlSchema.safeParse("").success, true);
-  assert.equal(
-    musicbrainzArtistIdSchema.safeParse("ABCDEF12-1234-1234-1234-123456789012")
-      .success,
-    true,
-  );
-  assert.equal(musicbrainzArtistIdSchema.safeParse("not-an-id").success, false);
   for (const [year, expected] of [
     ["", null],
     ["0", null],

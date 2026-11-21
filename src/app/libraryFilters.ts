@@ -1,3 +1,4 @@
+import { findCountry } from "./countries.ts";
 import type { Album, Genre, VinylStatus } from "../types/albums";
 import { latestRatedListen } from "../components/presentation.ts";
 import { includesGenre } from "./genres.ts";
@@ -20,6 +21,7 @@ export interface LibraryFilters {
   releaseYear?: NumericFilter;
   genres?: CategorySelection;
   artists?: CategorySelection;
+  country?: CategorySelection;
   instruments?: CategorySelection;
   vinylStatus?: readonly VinylStatus[];
 }
@@ -29,6 +31,7 @@ export const filterFields: readonly FilterField[] = [
   "releaseYear",
   "genres",
   "artists",
+  "country",
   "instruments",
   "vinylStatus",
 ];
@@ -84,6 +87,8 @@ export function matchesLibraryFilters(
   filters: LibraryFilters,
   genres: Genre[],
 ): boolean {
+  const countryIds = filters.country?.ids;
+
   return (
     matchesRating(album, filters.rating) &&
     (!filters.releaseYear ||
@@ -100,6 +105,10 @@ export function matchesLibraryFilters(
           .filter((item) => item.role === "primary")
           .map((item) => item.id),
         { mode: "any", ids: filters.artists.ids },
+      )) &&
+    (!countryIds?.length ||
+      album.artists.some((artist) =>
+        countryIds.includes(findCountry(artist.country)?.id ?? ""),
       )) &&
     (!filters.instruments ||
       matchesCategory(

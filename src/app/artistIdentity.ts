@@ -1,3 +1,4 @@
+import { findCountry } from "./countries.ts";
 import type { Artist, AlbumArtist } from "../types/albums";
 
 export function artistIdentity({
@@ -11,7 +12,14 @@ export function artistIdentity({
   AlbumArtist,
   "id" | "name" | "sortName" | "country" | "musicbrainzId" | "photoUrl"
 > {
-  return { id, name, sortName, country, musicbrainzId, photoUrl };
+  return {
+    id,
+    name,
+    sortName,
+    country: findCountry(country)?.id ?? null,
+    musicbrainzId,
+    photoUrl,
+  };
 }
 
 export const artistNameKey = (name: string): string =>

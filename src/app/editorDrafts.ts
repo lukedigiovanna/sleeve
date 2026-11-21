@@ -1,3 +1,4 @@
+import { syncCountryPicker } from "../components/countryPicker";
 import { linkRow } from "../components/formFields";
 import type {
   Album,
@@ -247,6 +248,7 @@ export class EditorDraftController implements EditorDrafts {
         used.add(input);
       }
     }
+    syncCountryPicker(this.ops.editor);
     for (const row of this.ops.editor.querySelectorAll<HTMLElement>(
       "[data-suggestion-row]",
     ))

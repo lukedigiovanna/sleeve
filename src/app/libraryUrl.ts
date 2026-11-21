@@ -1,3 +1,4 @@
+import { findCountry } from "./countries.ts";
 import type { LibraryFilters, NumericFilter } from "./libraryFilters.ts";
 import { categoryFields } from "./libraryCategoryFilters.ts";
 
@@ -52,7 +53,12 @@ export function parseLibraryUrl(hash: string): LibraryUrlState {
   if (rating) filters.rating = rating;
   if (releaseYear) filters.releaseYear = releaseYear;
   for (const field of categoryFields) {
-    const ids = [...new Set(params.getAll(field).filter((id) => id.trim()))];
+    const values = params
+      .getAll(field)
+      .map((id) => (field === "country" ? findCountry(id)?.id : id));
+    const ids = [
+      ...new Set(values.filter((id): id is string => Boolean(id?.trim()))),
+    ];
     if (ids.length) filters[field] = { ids };
   }
   const vinyl = [...new Set(params.getAll("vinyl"))].filter(

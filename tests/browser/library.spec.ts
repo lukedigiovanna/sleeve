@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { mockAlbums } from "../../src/data/mockData";
 
 async function enterDemo(page: Page) {
   await page.goto("/");
@@ -843,27 +844,161 @@ test("listening edits and deletion persist independently of other entries", asyn
   await expect(page.getByText("Edited entry", { exact: true })).toHaveCount(0);
 });
 
+test("artist countries link to a shareable Library filter with collaboration matches", async ({
+  page,
+}) => {
+  const album = mockAlbums[0];
+  const japan = {
+    ...album.artists[0],
+    country: " jp ",
+    name: "Country test artist",
+  };
+  const taiwan = {
+    ...japan,
+    id: "country-test-taiwan",
+    country: "TW",
+    name: "Country test collaborator",
+    role: "featured",
+    position: 1,
+  };
+  const albums = [
+    { ...album, title: "Country test collaboration", artists: [japan, taiwan] },
+    {
+      ...album,
+      id: "country-test-album-tw",
+      title: "Country test Taiwan solo",
+      artists: [{ ...taiwan, role: "primary", position: 0 }],
+    },
+    {
+      ...album,
+      id: "country-test-album-unknown",
+      title: "Country test unknown origin",
+      artists: [],
+    },
+  ];
+  const otherArtist = {
+    ...taiwan,
+    id: "country-test-extra",
+    name: "Country test extra",
+  };
+  await page.evaluate(
+    (data) => {
+      localStorage.setItem("sleeve-demo-v1", JSON.stringify(data));
+    },
+    { albums, artists: [otherArtist] },
+  );
+  await reloadDemo(page);
+
+  await page.locator('[data-nav="artists"]').click();
+  await page.getByRole("button", { name: "Add artist" }).click();
+  const countryInput = page.getByRole("combobox", { name: "Country" });
+  await countryInput.click();
+  const options = page
+    .getByRole("listbox", { name: "Countries" })
+    .getByRole("option");
+  await expect(options.nth(0)).toHaveText("Taiwan");
+  await expect(options.nth(1)).toHaveText("Japan");
+  await expect(options.nth(2)).toHaveText("Afghanistan");
+  await countryInput.press("Escape");
+  await expect(countryInput).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press("Escape");
+  await page.locator("#artists-search").fill("Taiwan");
+  await expect(page.locator("#artists-count")).toHaveText("2 artists");
+  await page.getByRole("link", { name: /Country test collaborator/ }).click();
+  await page
+    .getByRole("link", { name: "Browse albums by artists from Taiwan" })
+    .click();
+  await expect(page).toHaveURL(/#library\?country=TW$/);
+  await expect(page.locator("#library-count")).toHaveText("2 of 3 albums");
+  await expect(
+    page.getByRole("button", { name: "Remove Country filter" }),
+  ).toHaveText("Taiwan");
+
+  await page.locator('.library-toolbar summary[aria-label^="Filters"]').click();
+  const countries = page.getByRole("group", {
+    name: "Country suggestions",
+  });
+  await countries.getByRole("button", { name: "Add Japan" }).click();
+  await expect(page.locator("#library-count")).toHaveText("2 of 3 albums");
+  await expect(page).toHaveURL(/country=TW&country=JP$/);
+
+  await reloadDemo(page);
+  await expect(page.locator("#library-count")).toHaveText("2 of 3 albums");
+  await page.getByRole("button", { name: "Remove Country filter" }).click();
+  await expect(page.locator("#library-count")).toHaveText("3 albums");
+});
+
 test("catalog artist and instrument editors validate and retain details", async ({
   page,
 }) => {
   await page.goto("/#artists");
   await page.locator('[data-action="new-catalog-artist"]').click();
+  const form = page.locator("#catalog-artist-form");
+  await expect(form.getByLabel("Sort name")).toHaveCount(0);
+  await expect(form.getByLabel("MusicBrainz artist ID")).toHaveCount(0);
+  const photo = form.getByRole("textbox", { name: "Photo URL" });
+  const preview = form.locator(".catalog-image-preview");
+  await expect(form.getByText(/Paste an image URL/)).toHaveCount(0);
+  const inputBounds = (await photo.boundingBox())!;
+  const previewBounds = (await preview.boundingBox())!;
+  expect(previewBounds.height).toBe(inputBounds.height);
+  expect(previewBounds.y).toBe(inputBounds.y);
+
+  const spacing = await form.locator(".dialog-body").evaluate((body) => {
+    const [artistName, photoField, countryField, hint] = [...body.children]
+      .slice(0, 4)
+      .map((field) => field.getBoundingClientRect());
+    return [
+      photoField.top - artistName.bottom,
+      countryField.top - photoField.bottom,
+      hint.top - countryField.bottom,
+    ];
+  });
+  expect(spacing).toEqual([spacing[2], spacing[2], spacing[2]]);
+
   await page.locator('[name="artistName"]').fill("Catalog regression artist");
-  await page.locator('[name="artistMbid"]').fill("invalid");
-  await page.locator('#catalog-artist-form button[type="submit"]').click();
-  await expect(page.locator("#form-error")).toContainText(
-    "valid MusicBrainz artist ID",
-  );
-  await page.locator('[name="artistMbid"]').fill("");
-  await page.locator('[name="country"]').fill("us");
+  const countryField = page.getByRole("combobox", { name: "Country" });
+  await countryField.fill("Great Britain");
+  const country = page.getByRole("option", {
+    name: "United Kingdom",
+    exact: true,
+  });
+  await expect(country.locator("img")).toHaveAttribute("src", "/flags/gb.svg");
+  await countryField.press("ArrowDown");
+  await countryField.press("Enter");
+  await expect(countryField).toHaveValue("United Kingdom");
   await page.locator('#catalog-artist-form button[type="submit"]').click();
   await expect(page.locator("#page-title")).toHaveText(
     "Catalog regression artist",
   );
+  const musicbrainzId = "abcdef12-1234-1234-1234-123456789012";
+  await page.evaluate((musicbrainzId) => {
+    const key = "sleeve-demo-v1";
+    const snapshot = JSON.parse(localStorage.getItem(key)!);
+    const artist = snapshot.artists.find(
+      ({ name }) => name === "Catalog regression artist",
+    );
+    artist.sortName = "Regression artist, Catalog";
+    artist.musicbrainzId = musicbrainzId;
+    localStorage.setItem(key, JSON.stringify(snapshot));
+  }, musicbrainzId);
   await reloadDemo(page);
   await page.locator('[data-action="edit-catalog-artist"]').click();
-  await expect(page.locator('[name="country"]')).toHaveValue("US");
-  await page.keyboard.press("Escape");
+  await expect(countryField).toHaveValue("United Kingdom");
+  await page.getByRole("button", { name: "Clear country" }).click();
+  await expect(countryField).toHaveValue("");
+  await page.locator('#catalog-artist-form button[type="submit"]').click();
+  await expect(
+    page.getByRole("link", { name: /Browse albums by artists from/ }),
+  ).toHaveCount(0);
+  const savedArtist = await page.evaluate(() => {
+    const snapshot = JSON.parse(localStorage.getItem("sleeve-demo-v1")!);
+    return snapshot.artists.find(
+      ({ name }) => name === "Catalog regression artist",
+    );
+  });
+  expect(savedArtist.sortName).toBe("Regression artist, Catalog");
+  expect(savedArtist.musicbrainzId).toBe(musicbrainzId);
   await page.goto("/#instruments");
   await page.locator('[data-action="new-catalog-instrument"]').click();
   await page
@@ -1505,7 +1640,10 @@ test("artist links survive drafts and can be edited and removed", async ({
   const appleMusic = "https://music.apple.com/us/artist/alice-coltrane/485970";
 
   await form.getByLabel("Artist name").fill("Artist links test");
-  await form.getByLabel("Country code").fill("US");
+  await form.getByRole("combobox", { name: "Country" }).fill("USA");
+  await form
+    .getByRole("option", { name: "United States", exact: true })
+    .click();
   await addLink.click();
   await urls.nth(0).fill(wikipedia);
   await addLink.click();
@@ -1553,6 +1691,12 @@ test("artist links survive drafts and can be edited and removed", async ({
     await page.mouse.move(0, 0);
     await page.getByRole("link", { name: "Back to artists" }).focus();
     await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("link", {
+        name: "Browse albums by artists from United States",
+      }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
     await expect(wikipediaLink).toBeFocused();
     await expect(label).toBeVisible();
   }
@@ -1560,7 +1704,19 @@ test("artist links survive drafts and can be edited and removed", async ({
     links.getByRole("link", { name: /Apple Music/ }),
   ).toHaveAttribute("href", appleMusic);
 
-  await expect(page.locator(".artist-details")).toContainText("US");
+  const countryFlag = page.getByRole("link", {
+    name: "Browse albums by artists from United States",
+  });
+  await expect(countryFlag).toHaveAttribute("href", "#library?country=US");
+  await expect(countryFlag.locator("img")).toHaveAttribute(
+    "src",
+    "/flags/us.svg",
+  );
+  await expect(countryFlag).toHaveText("");
+  const flagBounds = await countryFlag.locator("img").boundingBox();
+  expect(flagBounds!.width).toBe(button!.width - 2);
+  expect(flagBounds!.height).toBe(button!.height - 2);
+  await expect(countryFlag.locator("img")).toHaveCSS("border-radius", "50%");
   const divider = page
     .locator(".artist-details")
     .getByText("·", { exact: true });
