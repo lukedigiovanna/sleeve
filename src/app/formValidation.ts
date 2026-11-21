@@ -5,9 +5,6 @@ import { webUrl } from "../components/presentation.ts";
 // Form readers trim before parsing. Keep empty-string/null conversion at each
 // submission boundary and leave library-dependent validation with the feature.
 export const requiredNameSchema = z.string().min(1);
-export const musicbrainzArtistIdSchema = z
-  .string()
-  .regex(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i);
 export const httpUrlSchema = z
   .string()
   .refine((value) => webUrl(value) !== null);

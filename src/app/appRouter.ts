@@ -12,7 +12,7 @@ import {
   renderFilterChips,
   toggleSelectedRating,
 } from "../components/libraryFilters";
-import { categoryFields } from "./libraryCategoryFilters";
+import { categoryFields, categoryName } from "./libraryCategoryFilters";
 import { updateCategoryFilter } from "../components/libraryCategoryFilters";
 import type { LibraryState } from "../views/libraryView";
 import { renderLibraryView, updateLibrary } from "../views/libraryView";
@@ -425,13 +425,12 @@ export class AppRouter {
           (field) => field === button.dataset.category,
         );
         const data = this.dependencies.library();
-        const item =
-          field && data[field].find((item) => item.id === button.dataset.id);
-        if (!field || !item) return false;
+        const id = button.dataset.id;
+        if (!field || !id || !categoryName(data, field, id)) return false;
         const ids = new Set(this.state.filters[field]?.ids ?? []);
         const adding = button.dataset.action === "add-library-category";
-        if (adding) ids.add(item.id);
-        else ids.delete(item.id);
+        if (adding) ids.add(id);
+        else ids.delete(id);
         if (ids.size) this.state.filters[field] = { ids: [...ids] };
         else delete this.state.filters[field];
 
@@ -451,7 +450,7 @@ export class AppRouter {
             : "[data-category-results] button",
         );
         const focus =
-          [...buttons].find((candidate) => candidate.dataset.id === item.id) ??
+          [...buttons].find((candidate) => candidate.dataset.id === id) ??
           buttons[0] ??
           group.querySelector<HTMLInputElement>("input")!;
         focus.focus({ preventScroll: true });

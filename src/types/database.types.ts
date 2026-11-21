@@ -249,6 +249,7 @@ export type Database = {
       artists: {
         Row: {
           country: string | null;
+          legacy_country: string | null;
           created_at: string;
           id: string;
           musicbrainz_id: string | null;
@@ -260,6 +261,7 @@ export type Database = {
         };
         Insert: {
           country?: string | null;
+          legacy_country?: string | null;
           created_at?: string;
           id?: string;
           musicbrainz_id?: string | null;
@@ -271,6 +273,7 @@ export type Database = {
         };
         Update: {
           country?: string | null;
+          legacy_country?: string | null;
           created_at?: string;
           id?: string;
           musicbrainz_id?: string | null;
@@ -280,6 +283,20 @@ export type Database = {
           updated_at?: string;
           user_id?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "artists_country_fkey";
+            columns: ["country"];
+            isOneToOne: false;
+            referencedRelation: "countries";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
+      countries: {
+        Row: { aliases: string[]; code: string; name: string };
+        Insert: { aliases?: string[]; code: string; name: string };
+        Update: { aliases?: string[]; code?: string; name?: string };
         Relationships: [];
       };
       genre_parents: {

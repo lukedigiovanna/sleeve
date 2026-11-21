@@ -25,11 +25,12 @@ import {
 import type { Artist, AlbumArtist, ArtistRole } from "../types/albums";
 import { icon } from "../components/icons";
 import { escapeHtml } from "../components/html";
+import { requiredNameSchema, optionalHttpUrlSchema } from "./formValidation";
+import { findCountry } from "./countries";
 import {
-  requiredNameSchema,
-  musicbrainzArtistIdSchema,
-  optionalHttpUrlSchema,
-} from "./formValidation";
+  CountryPicker,
+  renderCountryPicker,
+} from "../components/countryPicker";
 import { matches } from "./search";
 import { focusForTyping } from "./device";
 
@@ -67,13 +68,7 @@ function renderArtistForm(item?: Artist): string {
     <div class="dialog-body">
       ${field("Artist name", "artistName", item?.name, { attributes: 'required maxlength="150"', placeholder: "e.g. Miles Davis" })}
       ${catalogImageField("Photo URL", item?.name ?? "Artist", item?.photoUrl, true)}
-      ${field("Sort name", "sortName", item?.sortName, { attributes: 'maxlength="150"', placeholder: "e.g. Davis, Miles" })}
-      ${field("Country code", "country", item?.country, { attributes: 'maxlength="2" pattern="[A-Za-z]{2}"', placeholder: "e.g. US" })}
-      ${field("MusicBrainz artist ID", "artistMbid", item?.musicbrainzId, { attributes: 'maxlength="36"', placeholder: "Optional artist ID" })}
-      <p class="form-hint">
-        Artist details apply everywhere this artist is credited. Choose their
-        role separately on each album.
-      </p>
+      ${renderCountryPicker(item?.country)}
       <fieldset class="artist-link-fields">
         <legend>Links</legend>
         <div id="link-rows">${(item?.links ?? []).map(linkRow).join("")}</div>
@@ -112,28 +107,6 @@ function readArtistForm(
   )
     return formError("An artist with this name already exists.", input);
 
-  const musicbrainzId = value("artistMbid") || null;
-  if (
-    musicbrainzId &&
-    !musicbrainzArtistIdSchema.safeParse(musicbrainzId).success
-  )
-    return formError(
-      "Enter a valid MusicBrainz artist ID.",
-      form.querySelector('[name="artistMbid"]')!,
-    );
-  if (
-    musicbrainzId &&
-    artists.some(
-      (item) =>
-        item.id !== form.dataset.id &&
-        item.musicbrainzId?.toLowerCase() === musicbrainzId.toLowerCase(),
-    )
-  )
-    return formError(
-      "This MusicBrainz artist is already in your catalog.",
-      input,
-    );
-
   if (!optionalHttpUrlSchema.safeParse(value("catalogImage")).success)
     return formError(
       "Enter an HTTP or HTTPS photo URL.",
@@ -148,9 +121,9 @@ function readArtistForm(
     id: form.dataset.id || makeId(),
     name,
     photoUrl: value("catalogImage") || null,
-    sortName: value("sortName") || null,
-    country: value("country").toUpperCase() || null,
-    musicbrainzId,
+    sortName: existing?.sortName ?? null,
+    country: findCountry(value("country"))?.id ?? null,
+    musicbrainzId: existing?.musicbrainzId ?? null,
     links,
     updatedAt: new Date().toISOString(),
   };
@@ -193,6 +166,11 @@ export class ArtistFeature {
       renderArtistForm(item),
       '[name="artistName"]',
     );
+    const picker =
+      this.dependencies.dialog.element.querySelector<HTMLElement>(
+        ".country-picker",
+      );
+    if (picker) new CountryPicker(picker, this.dependencies.library.artists);
   }
 
   public artistPicker(credits: AlbumArtist[]): string {

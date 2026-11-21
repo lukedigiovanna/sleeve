@@ -2,6 +2,7 @@ import type { LibraryData } from "../types/library";
 import type { LibraryFilters } from "../app/libraryFilters";
 import {
   categoryChoices,
+  categoryName,
   type CategoryField,
 } from "../app/libraryCategoryFilters";
 import { escapeHtml } from "./html";
@@ -10,6 +11,7 @@ import { icon } from "./icons";
 const labels: Record<CategoryField, string> = {
   genres: "Genres",
   artists: "Artists",
+  country: "Country",
   instruments: "Instruments",
 };
 
@@ -57,8 +59,7 @@ function renderSelected(
 ): string {
   return (filters[field]?.ids ?? [])
     .map((id) => {
-      const name =
-        data[field].find((item) => item.id === id)?.name ?? "Unavailable";
+      const name = categoryName(data, field, id) ?? "Unavailable";
       return /* HTML */ `<button
         type="button"
         class="button secondary category-filter-pill selected"
@@ -93,7 +94,7 @@ export function renderCategoryFilter(
           id="library-${field}-search"
           data-category-search="${field}"
           placeholder="Search…"
-          aria-label="Search ${field}"
+          aria-label="Search ${field === "country" ? "artist countries" : field}"
         />
       </div>
     </div>

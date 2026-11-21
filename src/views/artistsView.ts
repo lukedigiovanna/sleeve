@@ -1,3 +1,6 @@
+import { findCountry } from "../app/countries";
+import { libraryUrl } from "../app/libraryUrl";
+import { countryFlag } from "../components/countryFlag";
 import type { CatalogSort } from "../components/sortOptions";
 import {
   catalogImage,
@@ -76,11 +79,20 @@ export function updateArtistsView(
         stats.updated = item.updatedAt;
       return { item, stats };
     })
-    .filter(
-      ({ item, stats }) =>
-        matches(query, item.name, item.sortName ?? "", item.country ?? "") &&
-        (!unused || !stats.count),
-    )
+    .filter(({ item, stats }) => {
+      const country = findCountry(item.country);
+      return (
+        matches(
+          query,
+          item.name,
+          item.sortName ?? "",
+          country?.name ?? "",
+          country?.id ?? "",
+          ...(country?.aliases ?? []),
+        ) &&
+        (!unused || !stats.count)
+      );
+    })
     .sort(
       (a, b) =>
         compareCatalog(a.stats, b.stats, sort) ||
@@ -97,6 +109,7 @@ export function updateArtistsView(
     : renderArtistEmpty(Boolean(artists.length));
 }
 function renderArtistRow(item: Artist, stats: CatalogStats): string {
+  const country = findCountry(item.country);
   return /* HTML */ `<li>
     <a class="instrument-catalog-row" href="${artistUrl(item.id)}"
       >${catalogImage(item.name, item.photoUrl, true)}<span
@@ -104,7 +117,7 @@ function renderArtistRow(item: Artist, stats: CatalogStats): string {
         ><span class="instrument-row-info"
           ><span
             ><strong>${e(item.name)}</strong
-            >${item.country ? /* HTML */ ` <em class="artist-country">(${e(item.country)})</em>` : ""}</span
+            >${country ? /* HTML */ ` <em class="artist-country">(${e(country.name)})</em>` : ""}</span
           ></span
         >${renderCatalogSummary(stats)}</span
       >${icon("chevron", 18)}</a
@@ -131,6 +144,7 @@ export function renderArtistDetail(
       (a.sortTitle || a.title).localeCompare(b.sortTitle || b.title),
   );
   const links = renderExternalLinks(item.links ?? [], "icons");
+  const country = findCountry(item.country);
   return /* HTML */ `<section
     class="instrument-page"
     aria-labelledby="page-title"
@@ -141,10 +155,10 @@ export function renderArtistDetail(
       <div class="artist-profile">
         <h1 id="page-title">${e(item.name)}</h1>
         ${
-          item.country || links
+          country || links
             ? /* HTML */ `<div class="artist-details">
-                ${item.country ? /* HTML */ `<span class="muted"><span class="sr-only">Country: </span>${e(item.country)}</span>` : ""}
-                ${item.country && links ? /* HTML */ `<span class="muted" aria-hidden="true">·</span>` : ""}
+                ${country ? /* HTML */ `<a class="artist-country-link" href="${e(libraryUrl({ filters: { country: { ids: [country.id] } } }))}" aria-label="Browse albums by artists from ${e(country.name)}" title="${e(country.name)}">${countryFlag(country)}</a>` : ""}
+                ${country && links ? /* HTML */ `<span class="muted" aria-hidden="true">·</span>` : ""}
                 ${links}
               </div>`
             : ""
