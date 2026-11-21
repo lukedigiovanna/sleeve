@@ -37,7 +37,7 @@ export interface Album {
 export type Artist = Pick<
   AlbumArtist,
   "id" | "name" | "sortName" | "country" | "musicbrainzId" | "photoUrl"
->;
+> & { links?: ExternalLink[]; updatedAt?: string };
 
 export interface AlbumArtist {
   photoUrl?: string | null;
@@ -75,12 +75,14 @@ export interface AlbumInstrument extends Instrument {
   notes: string | null;
 }
 
-// A user-supplied link attached to an album.
-export interface AlbumLink {
+// A user-supplied link attached to a catalog artist or album.
+export interface ExternalLink {
   id: string;
   url: string;
   label: string | null;
 }
+
+export type AlbumLink = ExternalLink;
 
 // A single listening event for an album.
 export interface ListeningEntry {

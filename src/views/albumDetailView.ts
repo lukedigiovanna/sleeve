@@ -1,7 +1,7 @@
 import { vinylStatusIcon } from "../app/vinylStatus";
 import { genreUrl } from "../app/genres";
 import { artistUrl, roleLabel } from "./artistsView";
-import type { Album, AlbumLink, ListeningEntry } from "../types/albums";
+import type { Album, ListeningEntry } from "../types/albums";
 import {
   cover,
   latestRatedListen,
@@ -11,6 +11,7 @@ import {
 import { escapeHtml } from "../components/html";
 import { instrumentUrl } from "../app/instruments";
 import { icon } from "../components/icons";
+import { renderExternalLinks } from "../components/externalLinks";
 import { renderRating } from "../components/rating";
 
 function formatDate(date: string) {
@@ -20,51 +21,6 @@ function formatDate(date: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(date.slice(0, 10) + "T00:00:00Z"));
-}
-
-function linkDetails(link: Partial<AlbumLink>, parsed = webUrl(link.url)) {
-  const domain = parsed?.hostname.replace(/^www\./, "") ?? "";
-  const provider = linkProvider(domain);
-  return { name: link.label || provider.name, icon: provider.icon };
-}
-
-function linkProvider(domain: string): { name: string; icon: string } {
-  if (domain === "music.apple.com")
-    return { name: "Apple Music", icon: "music" };
-  if (
-    ["youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"].includes(
-      domain,
-    )
-  )
-    return { name: "YouTube", icon: "play" };
-  if (domain === "wikipedia.org" || domain.endsWith(".wikipedia.org"))
-    return { name: "Wikipedia", icon: "wikipedia" };
-  if (domain === "discogs.com" || domain.endsWith(".discogs.com"))
-    return { name: "Discogs", icon: "disc" };
-  return { name: domain, icon: "link" };
-}
-
-function externalLinks(links: AlbumLink[]) {
-  const rows = links.flatMap((link) => {
-    const parsed = webUrl(link.url);
-    if (!parsed) return [];
-    const info = linkDetails(link, parsed);
-    return [
-      /* HTML */ `<a
-        class="external-link"
-        href="${escapeHtml(parsed.href)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        ><span>${icon(info.icon, 19)} ${escapeHtml(info.name)}</span
-        >${icon("external", 18)}<span class="sr-only">
-          (opens in a new tab)</span
-        ></a
-      >`,
-    ];
-  });
-  return rows.length
-    ? /* HTML */ `<div class="external-links">${rows.join("")}</div>`
-    : /* HTML */ `<p class="muted">No music links added.</p>`;
 }
 
 function historyCard(listen: ListeningEntry) {
@@ -308,7 +264,7 @@ export function renderAlbumDetailView(album: Album): string {
               ${icon("edit", 14)} Edit
             </button>
           </div>
-          ${externalLinks(album.links)}
+          ${renderExternalLinks(album.links) || /* HTML */ `<p class="muted">No music links added.</p>`}
         </section>
       </div>
     </div>

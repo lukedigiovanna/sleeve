@@ -1,5 +1,19 @@
 import type { Artist, AlbumArtist } from "../types/albums";
 
+export function artistIdentity({
+  id,
+  name,
+  sortName,
+  country,
+  musicbrainzId,
+  photoUrl,
+}: Artist): Pick<
+  AlbumArtist,
+  "id" | "name" | "sortName" | "country" | "musicbrainzId" | "photoUrl"
+> {
+  return { id, name, sortName, country, musicbrainzId, photoUrl };
+}
+
 export const artistNameKey = (name: string): string =>
   name.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
 
@@ -37,12 +51,15 @@ export function commitAlbumArtists(
   for (const credit of selected) {
     let artist = findArtist(artists, credit);
     if (!artist) {
-      const { role: _role, position: _position, ...identity } = credit;
-      artist = { ...identity };
+      artist = artistIdentity(credit);
       artists.push(artist);
     }
     if (!credits.some((item) => item.id === artist.id))
-      credits.push({ ...credit, ...artist, position: credits.length });
+      credits.push({
+        ...credit,
+        ...artistIdentity(artist),
+        position: credits.length,
+      });
   }
   return { artists, credits };
 }

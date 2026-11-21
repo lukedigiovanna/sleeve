@@ -1,7 +1,6 @@
 import type { CatalogSort } from "../components/sortOptions";
 import {
   catalogImage,
-  catalogSummary,
   catalogSort,
   catalogStats,
   renderCatalogSummary,
@@ -10,6 +9,7 @@ import {
 } from "../components/catalogSummary";
 import { renderAlbumListHeading } from "../components/albumListHeading";
 import { renderCatalogHeading } from "../components/catalogHeading";
+import { renderExternalLinks } from "../components/externalLinks";
 import { renderCatalogFilters } from "../components/catalogFilters";
 import type { Album, Artist } from "../types/albums";
 import { escapeHtml as e } from "../components/html";
@@ -68,7 +68,13 @@ export function updateArtistsView(
             (artist) => artist.id === item.id && artist.role === "primary",
           ),
       );
-      return { item, stats: catalogStats(used) };
+      const stats = catalogStats(used);
+      if (
+        item.updatedAt &&
+        Date.parse(item.updatedAt) > (Date.parse(stats.updated) || 0)
+      )
+        stats.updated = item.updatedAt;
+      return { item, stats };
     })
     .filter(
       ({ item, stats }) =>
@@ -124,34 +130,41 @@ export function renderArtistDetail(
       (a.releaseYear ?? Infinity) - (b.releaseYear ?? Infinity) ||
       (a.sortTitle || a.title).localeCompare(b.sortTitle || b.title),
   );
+  const links = renderExternalLinks(item.links ?? [], "icons");
   return /* HTML */ `<section
     class="instrument-page"
     aria-labelledby="page-title"
   >
     <a class="back-link" href="#artists">${icon("back", 17)} Back to artists</a>
     <div class="artist-page-heading">
-      <div class="artist-title-row">
+      ${catalogImage(item.name, item.photoUrl, true)}
+      <div class="artist-profile">
         <h1 id="page-title">${e(item.name)}</h1>
-        <button class="button secondary" data-action="edit-catalog-artist">
-          ${icon("edit", 16)} Edit artist
-        </button>
+        ${
+          item.country || links
+            ? /* HTML */ `<div class="artist-details">
+                ${item.country ? /* HTML */ `<span class="muted"><span class="sr-only">Country: </span>${e(item.country)}</span>` : ""}
+                ${item.country && links ? /* HTML */ `<span class="muted" aria-hidden="true">·</span>` : ""}
+                ${links}
+              </div>`
+            : ""
+        }
       </div>
-      <div class="catalog-detail-summary">
-        ${catalogImage(item.name, item.photoUrl, true)}${catalogSummary(used)}
-      </div>
-      <div class="artist-details">
-        <p class="muted">
-          ${item.country ? `Country: ${e(item.country)}` : ""}
-        </p>
-      </div>
+      <button
+        class="button secondary artist-edit"
+        data-action="edit-catalog-artist"
+        aria-label="Edit artist"
+      >
+        ${icon("edit", 16)} <span>Edit artist</span>
+      </button>
     </div>
     <section class="instrument-albums">
-      ${renderAlbumListHeading("Album credits", used.length, layout, "artist-layout")}
+      ${renderAlbumListHeading("Albums", layout, "artist-layout")}
       ${
         used.length
           ? renderAlbumGrid(used, layout)
           : /* HTML */ `<div class="empty detail-empty">
-              <h3>No album credits yet</h3>
+              <h3>No albums yet</h3>
               <p>
                 This artist stays in your catalog until you use or delete it.
               </p>

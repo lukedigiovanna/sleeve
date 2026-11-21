@@ -1,3 +1,4 @@
+import { artistIdentity } from "./artistIdentity.ts";
 import type { LibraryData } from "../types/library";
 import {
   readAlbums,
@@ -74,7 +75,7 @@ export function createLibraryState(
       for (const album of data.albums)
         for (const credit of album.artists) {
           const artist = data.artists.find((item) => item.id === credit.id);
-          if (artist) Object.assign(credit, artist);
+          if (artist) Object.assign(credit, artistIdentity(artist));
         }
     },
     async save(): Promise<SaveResult> {

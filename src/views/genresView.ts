@@ -193,7 +193,7 @@ export function renderGenreDetail(
         : ""
     }
     <section class="genre-albums" aria-labelledby="genre-albums-title">
-      ${renderAlbumListHeading("Albums", used.length, layout, "genre-layout", "genre-albums-title")}
+      ${renderAlbumListHeading("Albums", layout, "genre-layout", { id: "genre-albums-title", count: used.length })}
       ${used.length ? renderAlbumGrid(used, layout) : /* HTML */ `<p>No albums yet.</p>`}
     </section>
     <div class="instrument-delete">

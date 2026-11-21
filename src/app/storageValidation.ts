@@ -9,6 +9,18 @@ import type { LibrarySnapshot } from "./libraryCache";
 const optionalStringSchema = z.string().nullish();
 const namedSchema = z.looseObject({ id: z.string(), name: z.string() });
 const namedRowsSchema = z.array(namedSchema);
+const artistCatalogSchema = namedSchema.extend({
+  links: z
+    .array(
+      z.object({
+        id: z.string(),
+        url: z.string(),
+        label: z.string().nullable(),
+      }),
+    )
+    .optional(),
+  updatedAt: z.string().optional(),
+});
 const demoAlbumSchema = z.looseObject({
   id: z.string(),
   title: z.string(),
@@ -51,7 +63,7 @@ const demoInstrumentCatalogSchema = z.looseObject({
 });
 const demoArtistCatalogSchema = z.looseObject({
   artists: z.array(
-    namedSchema.extend({
+    artistCatalogSchema.extend({
       sortName: optionalStringSchema,
       country: optionalStringSchema,
       musicbrainzId: optionalStringSchema,
@@ -71,7 +83,7 @@ const librarySnapshotSchema = z.looseObject({
   accountId: z.string(),
   syncedAt: z.number(),
   data: z.looseObject({
-    artists: namedRowsSchema,
+    artists: z.array(artistCatalogSchema),
     genres: namedRowsSchema,
     instruments: z.array(
       namedSchema.extend({ categories: z.array(z.unknown()) }),

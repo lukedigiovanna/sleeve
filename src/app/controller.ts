@@ -1,3 +1,4 @@
+import { handleLinkFieldAction } from "./linkFields";
 import { selectTheme } from "./theme";
 import { isVinylStatus, vinylStatusLabel } from "./vinylStatus";
 import { LibraryConnection } from "./libraryConnection";
@@ -447,7 +448,7 @@ export class AppController {
     }
 
     const album = this.router.activeAlbum();
-    if (this.discovery.click(button)) return;
+    if (handleLinkFieldAction(button) || this.discovery.click(button)) return;
     if (this.artistFeature.click(button)) return;
     if (this.genreFeature.click(button)) return;
     if (this.instrumentFeature.click(button, album)) return;

@@ -7,6 +7,11 @@ import { instrumentCategories } from "./instruments.ts";
 
 // Persisted drafts allow incomplete edits. Keep submission requirements (such as
 // nonempty titles) separate, and retain unknown fields from version-one drafts.
+const linkSchema = z.looseObject({
+  id: z.string(),
+  url: z.string(),
+  label: z.string().nullable(),
+});
 const artistSchema = z.looseObject({
   id: z.string(),
   name: z.string(),
@@ -14,6 +19,8 @@ const artistSchema = z.looseObject({
   country: z.string().nullable(),
   musicbrainzId: z.string().nullable(),
   photoUrl: z.string().nullish(),
+  links: z.array(linkSchema).optional(),
+  updatedAt: z.string().optional(),
 });
 const storedGenreSchema = z.looseObject({
   id: z.string(),
@@ -67,13 +74,7 @@ const albumSchema = z.looseObject({
   artists: z.array(artistCreditSchema),
   genres: z.array(albumGenreSchema),
   instruments: z.array(albumInstrumentSchema),
-  links: z.array(
-    z.looseObject({
-      id: z.string(),
-      url: z.string(),
-      label: z.string().nullable(),
-    }),
-  ),
+  links: z.array(linkSchema),
   listeningEntries: z.array(listeningEntrySchema),
 });
 const draftTargetSchema = z.discriminatedUnion("kind", [

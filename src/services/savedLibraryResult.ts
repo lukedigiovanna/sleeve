@@ -18,6 +18,13 @@ const savedListen = savedAlbum.extend({
 }) satisfies z.ZodType<SavedListen>;
 const savedLibraryResult = z.object({
   albums: z.array(savedAlbum).default([]),
+  artists: z
+    .array(
+      savedAlbum.pick({ id: true, updated_at: true }).extend({
+        updated_at: z.iso.datetime({ offset: true }).optional(),
+      }),
+    )
+    .default([]),
   listening_entries: z.array(savedListen).default([]),
 });
 
@@ -36,6 +43,14 @@ export function reconcileLibraryTimestamps(
   const savedEntries = new Map(
     parsed.data.listening_entries.map((row) => [row.id, row]),
   );
+
+  const savedArtists = new Map(
+    parsed.data.artists.map((row) => [row.id, row.updated_at]),
+  );
+  for (const artist of library.artists) {
+    const updatedAt = savedArtists.get(artist.id);
+    if (updatedAt) artist.updatedAt = new Date(updatedAt).toISOString();
+  }
 
   for (const album of library.albums) {
     const saved = savedAlbums.get(album.id);

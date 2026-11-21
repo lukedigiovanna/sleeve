@@ -1,26 +1,39 @@
 .artist-page-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
   margin-bottom: 12px;
 }
+
 .artist-page-heading + .instrument-albums {
-  margin-top: 12px;
+  margin-top: 28px;
 }
-.artist-title-row {
+
+.artist-page-heading .catalog-image {
+  align-self: stretch;
+  width: 56px;
+  height: auto;
+  border-radius: 9px;
+}
+
+.instrument-page .artist-profile h1 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.artist-details {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px 20px;
+  gap: 4px 8px;
+  font-size: 13px;
+  margin-top: 7px;
 }
-.artist-title-row h1 {
-  margin: 0;
-  min-width: 0;
-}
-.artist-title-row .button {
-  flex-shrink: 0;
-}
-.artist-details {
-  margin-top: 4px;
-}
+
 .album-list-heading {
   display: flex;
   justify-content: space-between;
@@ -39,4 +52,116 @@
   font-size: 12px;
   font-style: italic;
   white-space: nowrap;
+}
+
+.artist-links {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.artist-link-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--color-accent-text);
+}
+
+.artist-link-icon:is(:hover, :focus-visible) {
+  background: var(--panel-hover);
+  border-color: var(--color-border);
+}
+
+.artist-link-label {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  translate: -50% 0;
+  width: max-content;
+  max-width: min(44ch, 50vw);
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+.artist-link-icon:focus-visible .artist-link-label {
+  display: block;
+}
+
+@media (hover: hover) {
+  .artist-link-icon:hover .artist-link-label {
+    display: block;
+  }
+}
+
+@media (pointer: coarse) {
+  .artist-link-icon {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.artist-more-links summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.artist-more-links summary::-webkit-details-marker {
+  display: none;
+}
+
+.artist-more-links .external-links {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max-content;
+  max-width: min(240px, calc(100vw - 100px));
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+@media (max-width: 480px) {
+  .artist-page-heading {
+    gap: 8px;
+  }
+
+  .artist-page-heading .catalog-image {
+    width: 52px;
+  }
+
+  .artist-page-heading + .instrument-albums .detail-heading {
+    gap: 6px;
+  }
+
+  .artist-page-heading + .instrument-albums h2 {
+    font-size: 23px;
+  }
+
+  .artist-edit {
+    width: 34px;
+    min-height: 34px;
+    padding-inline: 0;
+  }
+
+  .artist-edit span {
+    display: none;
+  }
 }

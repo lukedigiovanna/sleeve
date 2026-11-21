@@ -211,6 +211,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      artist_links: {
+        Row: {
+          artist_id: string;
+          created_at: string;
+          id: string;
+          label: string | null;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          artist_id: string;
+          created_at?: string;
+          id?: string;
+          label?: string | null;
+          url: string;
+          user_id?: string;
+        };
+        Update: {
+          artist_id?: string;
+          created_at?: string;
+          id?: string;
+          label?: string | null;
+          url?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "artist_links_artist_id_user_id_fkey";
+            columns: ["artist_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "artists";
+            referencedColumns: ["id", "user_id"];
+          },
+        ];
+      };
       artists: {
         Row: {
           country: string | null;
