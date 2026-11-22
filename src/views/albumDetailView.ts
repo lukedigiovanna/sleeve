@@ -1,3 +1,10 @@
+import type { LibraryData } from "../types/library";
+import {
+  listeningNoteTargets,
+  noteLinkKey,
+  renderListeningNote,
+  type NoteLinkTarget,
+} from "../components/listeningNoteLinks";
 import { vinylStatusIcon } from "../app/vinylStatus";
 import { genreUrl } from "../app/genres";
 import { artistUrl, roleLabel } from "./artistsView";
@@ -23,21 +30,44 @@ function formatDate(date: string) {
   }).format(new Date(date.slice(0, 10) + "T00:00:00Z"));
 }
 
-function historyCard(listen: ListeningEntry) {
+function historyCard(
+  listen: ListeningEntry,
+  targets: ReadonlyMap<string, NoteLinkTarget>,
+): string {
+  const date = formatDate(listen.listenedAt);
+  const note = renderListeningNote(listen.notes ?? "", targets);
+  const label = `Edit listen from ${date}`;
+  const body = /* HTML */ `<span class="listen-top">
+      <time datetime="${escapeHtml(listen.listenedAt)}">${date}</time>
+      ${renderRating(listen.rating)}
+    </span>
+    ${listen.notes ? /* HTML */ `<span class="listen-notes">${note.html}</span>` : ""}`;
+  const edit = /* HTML */ `${icon("edit", 14)} Edit listen`;
+
+  if (note.hasLinks) {
+    return /* HTML */ `<article class="listen-card listen-card-linked">
+      ${body}
+      <button
+        type="button"
+        class="listen-edit"
+        data-action="edit-listen"
+        data-id="${escapeHtml(listen.id)}"
+        aria-label="${label}"
+      >
+        ${edit}
+      </button>
+    </article>`;
+  }
+
   return /* HTML */ `<button
     type="button"
     class="listen-card"
     data-action="edit-listen"
     data-id="${escapeHtml(listen.id)}"
-    aria-label="Edit listen from ${formatDate(listen.listenedAt)}"
+    aria-label="${label}"
   >
-    <span class="listen-top">
-      <time datetime="${listen.listenedAt}"
-        >${formatDate(listen.listenedAt)}</time
-      >${renderRating(listen.rating)}
-    </span>
-    ${listen.notes ? /* HTML */ `<span class="listen-notes">${escapeHtml(listen.notes)}</span>` : ""}
-    <span class="listen-edit">${icon("edit", 14)} Edit listen</span>
+    ${body}
+    <span class="listen-edit">${edit}</span>
   </button>`;
 }
 
@@ -160,7 +190,16 @@ function renderVinylControl(album: Album): string {
   </div>`;
 }
 
-export function renderAlbumDetailView(album: Album): string {
+export function renderAlbumDetailView(
+  album: Album,
+  library: LibraryData,
+): string {
+  const targets = new Map(
+    listeningNoteTargets(library).map((target) => [
+      noteLinkKey(target),
+      target,
+    ]),
+  );
   const listens = orderedListens(album);
   const rating = latestRatedListen(album)?.rating;
   const credits = [...album.artists].sort((a, b) => a.position - b.position);
@@ -233,7 +272,7 @@ export function renderAlbumDetailView(album: Album): string {
           </div>
           ${
             listens.length
-              ? listens.map(historyCard).join("")
+              ? listens.map((listen) => historyCard(listen, targets)).join("")
               : /* HTML */ `<div class="empty detail-empty">
                   <h3>No listens logged yet</h3>
                   <p>Add a rating and notes after your next listen.</p>

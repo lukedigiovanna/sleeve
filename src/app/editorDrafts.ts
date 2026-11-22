@@ -1,3 +1,4 @@
+import { restoreListeningNoteEditor } from "../components/listeningNoteEditor";
 import { syncCountryPicker } from "../components/countryPicker";
 import { linkRow, updateCatalogImage } from "../components/formFields";
 import { icon } from "../components/icons";
@@ -283,6 +284,7 @@ export class EditorDraftController implements EditorDrafts {
       }
     }
     syncCountryPicker(this.ops.editor);
+    restoreListeningNoteEditor(this.ops.editor);
     const imageInput = this.ops.editor.querySelector<HTMLInputElement>(
       ".catalog-image-editor input",
     );

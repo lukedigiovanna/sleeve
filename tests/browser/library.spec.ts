@@ -354,7 +354,7 @@ test("new listening entry survives reload", async ({ page }) => {
   await page.locator('[data-action="listen"]').first().click();
   await page.locator('[name="date"]').fill("2026-01-15");
   await page.locator('[name="rating"][value="8"]').check();
-  await page.locator('[name="notes"]').fill("Regression listening notes");
+  await page.locator("#listening-notes").fill("Regression listening notes");
   await page.locator('#listen-form button[type="submit"]').click();
   await expect(page.locator("#editor")).not.toBeVisible();
   await reloadDemo(page);
@@ -367,6 +367,126 @@ test("new listening entry survives reload", async ({ page }) => {
     .click();
   await expect(page.locator('[name="date"]')).toHaveValue("2026-01-15");
   await expect(page.locator('[name="rating"][value="8"]')).toBeChecked();
+});
+
+test("listening note smart links survive drafts and open catalog pages", async ({
+  page,
+  isMobile,
+}) => {
+  const source = mockAlbums[0];
+  const related = mockAlbums[1];
+  const references = [
+    { type: "Artist", label: related.artists[0].name },
+    { type: "Album", label: related.title },
+    { type: "Instrument", label: source.instruments[0].name },
+    { type: "Genre", label: source.genres[0].name },
+  ];
+
+  await openAlbum(page);
+  await page.getByRole("button", { name: "Log a listen" }).click();
+  const notes = page.getByRole("combobox", { name: "Listening notes" });
+  await notes.fill("mail@example.com");
+  await expect(notes).toHaveAttribute("aria-expanded", "false");
+  await notes.fill("Reminds me of @");
+  await expect(notes).toHaveAttribute("aria-expanded", "true");
+  await notes.press("Escape");
+  await expect(notes).toHaveText("Reminds me of @");
+  await expect(page.locator("#editor")).toBeVisible();
+
+  for (const [index, { type, label }] of references.entries()) {
+    if (index > 0) await page.keyboard.insertText("@");
+    await page.keyboard.insertText(label);
+    const option = page
+      .getByRole("option", { name: new RegExp(`^${type} `) })
+      .filter({ hasText: label })
+      .first();
+    await expect(option).toBeVisible();
+    if (index === 0) await notes.press("Enter");
+    else if (isMobile) await option.tap();
+    else await option.click();
+
+    await expect(notes.locator(".listen-note-chip").last()).toHaveText(label);
+    await expect(notes).toBeFocused();
+  }
+
+  await notes.press("Shift+Enter");
+  await page.keyboard.insertText("A second line.");
+  await expect(page.getByText("Draft saved on this device")).toHaveCount(1);
+  await reloadDemo(page);
+  await expect(notes.locator(".listen-note-chip")).toHaveCount(4);
+  await page.getByRole("button", { name: "Save listen" }).click();
+  await expect(page.locator("#editor")).not.toBeVisible();
+  await reloadDemo(page);
+
+  const card = page
+    .locator(".listen-card")
+    .filter({ hasText: "Reminds me of" });
+  await expect(card.locator(".listen-notes")).toContainText("A second line.");
+  expect(await card.locator(".listen-notes").textContent()).toMatch(
+    /\nA second line\.$/,
+  );
+  for (const { type, label } of references) {
+    const link = card.getByRole("link", { name: label, exact: true });
+    await expect(link).toHaveAttribute(
+      "href",
+      new RegExp(`^#${type.toLowerCase()}/`),
+    );
+    await expect(link).toHaveCSS("font-weight", "700");
+    await expect(link).toHaveCSS("text-decoration-line", "none");
+  }
+  await card.getByRole("link", { name: related.title, exact: true }).click();
+  await expect(page.locator("#page-title")).toHaveText(related.title);
+});
+
+test("a saved smart link at the end of a note can be followed by text or deleted", async ({
+  page,
+  isMobile,
+}) => {
+  const title = mockAlbums[1].title;
+  await openAlbum(page);
+  await page.getByRole("button", { name: "Log a listen" }).click();
+  const notes = page.getByRole("combobox", { name: "Listening notes" });
+  await notes.fill(`@${title}`);
+  await notes.press("Enter");
+  const chip = notes.locator(".listen-note-chip");
+  await expect(chip).toHaveCount(1);
+  await page.getByRole("button", { name: "Save listen" }).click();
+  await reloadDemo(page);
+
+  const card = page.locator(".listen-card").filter({ hasText: title });
+  await card.getByRole("button", { name: /Edit listen from/ }).click();
+  const bounds = (await chip.boundingBox())!;
+  const x = bounds.x + bounds.width + 8;
+  const y = bounds.y + bounds.height / 2;
+  if (isMobile) await page.touchscreen.tap(x, y);
+  else await page.mouse.click(x, y);
+  await page.keyboard.type(" again");
+  await expect(notes).toHaveText(`${title} again`);
+
+  for (const _ of " again") await page.keyboard.press("Backspace");
+  await expect(notes).toHaveText(title);
+  await page.keyboard.press("Backspace");
+  await expect(chip).toHaveCount(0);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(card).toHaveCount(0);
+});
+
+test("missing smart-link targets display the escaped fallback label", async ({
+  page,
+}) => {
+  await openAlbum(page);
+  await page.getByRole("button", { name: "Log a listen" }).click();
+  await page
+    .locator("#listening-notes")
+    .fill(
+      String.raw`From [Folk \[live\] & <friends>](sleeve:genre/missing) and [bad](sleeve:genre/%ZZ)`,
+    );
+  await page.getByRole("button", { name: "Save listen" }).click();
+  const note = page.locator(".listen-notes").filter({ hasText: "Folk" });
+  await expect(note).toHaveText(
+    "From Folk [live] & <friends> and [bad](sleeve:genre/%ZZ)",
+  );
+  await expect(note.getByRole("link")).toHaveCount(0);
 });
 
 test("listening stars preview half-star ratings with a mouse", async ({
@@ -398,7 +518,7 @@ test("listening stars preview half-star ratings with a mouse", async ({
       "clip-path",
       "inset(0px 100% 0px 0px)",
     );
-    await page.locator('[name="notes"]').hover();
+    await page.locator("#listening-notes").hover();
   }
 
   await expect(threeAndAHalf).toBeChecked();
@@ -415,7 +535,7 @@ test("listening draft status appears on hover or tap", async ({
   const row = page.locator(".listen-intro");
   const icon = row.getByRole("button", { name: "Draft status" });
   const message = row.locator("[data-draft-status]");
-  const notes = page.locator('[name="notes"]');
+  const notes = page.locator("#listening-notes");
   await notes.fill("An unfinished listening note");
   await expect(message).toHaveText("Draft saved on this device");
   await expect(message).toHaveCSS("opacity", "0");
@@ -456,7 +576,7 @@ test("note-only listens survive reload and preserve the latest rating", async ({
   const selectedRating = page.locator('[name="rating"]:checked');
   await expect(page.locator('[name="rating"]')).toHaveCount(10);
   await expect(selectedRating).toHaveCount(0);
-  await page.locator('[name="notes"]').fill("A thought about this album");
+  await page.locator("#listening-notes").fill("A thought about this album");
   await page.getByRole("button", { name: "Save listen" }).click();
   await reloadDemo(page);
 
@@ -911,14 +1031,14 @@ test("listening edits and deletion persist independently of other entries", asyn
   await openAlbum(page);
   await page.locator('[data-action="listen"]').first().click();
   await page.locator('[name="rating"][value="6"]').check();
-  await page.locator('[name="notes"]').fill("Entry to edit");
+  await page.locator("#listening-notes").fill("Entry to edit");
   await page.locator('#listen-form button[type="submit"]').click();
   await page
     .locator('[data-action="edit-listen"]')
     .filter({ hasText: "Entry to edit" })
     .click();
   await page.locator('[name="rating"][value="9"]').check();
-  await page.locator('[name="notes"]').fill("Edited entry");
+  await page.locator("#listening-notes").fill("Edited entry");
   await page.locator('#listen-form button[type="submit"]').click();
   await reloadDemo(page);
   const entries = page.locator('[data-action="edit-listen"]');
@@ -1334,7 +1454,7 @@ test("route previews match live lists and remounting handles each save once", as
   await openAlbum(page);
   await page.locator('[data-action="listen"]').first().click();
   await page.locator('[name="rating"][value="8"]').check();
-  await page.locator('[name="notes"]').fill("Saved once after remount");
+  await page.locator("#listening-notes").fill("Saved once after remount");
   await page.locator('#listen-form button[type="submit"]').click();
   await expect(page.locator("#editor")).not.toBeVisible();
   await expect(

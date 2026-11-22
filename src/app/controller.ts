@@ -215,7 +215,7 @@ export class AppController {
       editor: this.editor,
       showDialog: (...args) => this.dialog.showDialog(...args),
       beginDraft: (target) => this.drafts.beginDraft(target),
-      albums: () => this.library.data.albums,
+      library: () => this.library.data,
       finishSave: (id, message) => this.persistence.finishSave(id, message),
     });
 
