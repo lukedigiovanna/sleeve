@@ -84,3 +84,99 @@
     min-height: 44px;
   }
 }
+
+.listen-card-linked {
+  cursor: auto;
+}
+.listen-card-linked .listen-edit {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.listen-note-link {
+  color: var(--color-accent-text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.listen-note-link:hover,
+.listen-card-linked .listen-edit:hover {
+  color: var(--ink);
+}
+.listen-note-editor {
+  min-height: 104px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface-raised);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 450;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.listen-note-editor:empty::before {
+  color: var(--muted);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+.listen-note-editor:focus-visible,
+.listen-note-link:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+.listen-note-chip {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--color-hover);
+  color: var(--color-accent-text);
+  font-weight: 700;
+}
+#listen-note-error {
+  color: var(--color-error);
+}
+#listen-note-error:empty {
+  display: none;
+}
+.listen-note-picker {
+  position: fixed;
+  inset: auto;
+  width: min(310px, calc(100vw - 68px));
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+  color: var(--ink);
+  box-shadow: 0 6px 20px var(--color-shadow);
+}
+.listen-note-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.listen-note-option .icon {
+  flex: none;
+  color: var(--muted);
+}
+.listen-note-option[aria-selected="true"],
+.listen-note-option:hover {
+  background: var(--color-hover);
+}
+.listen-note-option small {
+  display: block;
+}
+.listen-note-empty {
+  padding: 8px;
+  color: var(--muted);
+}
+@media (pointer: coarse) {
+  .listen-note-editor {
+    font-size: 16px;
+  }
+}

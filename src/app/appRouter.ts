@@ -230,7 +230,10 @@ export class AppRouter {
         <a class="button secondary" href="#instruments">Back to instruments</a>
       </div>`;
     } else if (album) {
-      this.dependencies.main.innerHTML = renderAlbumDetailView(album);
+      this.dependencies.main.innerHTML = renderAlbumDetailView(
+        album,
+        this.dependencies.library(),
+      );
     } else if (missing) {
       this.dependencies.main.innerHTML = /* HTML */ `<div
         class="empty route-empty"

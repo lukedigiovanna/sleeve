@@ -9,13 +9,19 @@ import { ratingLabels } from "../data/mockData";
 import { escapeHtml } from "../components/html";
 import { icon } from "../components/icons";
 import { artistText } from "../components/presentation";
+import type { LibraryData } from "../types/library";
+import { ListeningNoteEditor } from "../components/listeningNoteEditor";
+import {
+  listeningNoteTargets,
+  suggestedNoteLinks,
+} from "../components/listeningNoteLinks";
 import { stars } from "../components/rating";
 
 export interface ListeningDependencies {
   editor: HTMLDialogElement;
   showDialog: EditorDialog["show"];
   beginDraft: EditorDrafts["beginDraft"];
-  albums: () => Album[];
+  library: () => LibraryData;
   finishSave: (id: string, message: string) => Promise<void>;
 }
 
@@ -71,16 +77,32 @@ export function createListening(ops: ListeningDependencies): Listening {
               </div>
             </div>
           </fieldset>
-          <label class="field"
-            ><span>Listening notes</span
-            ><textarea
-              name="notes"
-              rows="4"
-              maxlength="3000"
-              placeholder="What stood out on this listen?"
-            >
+          <div class="field">
+            <span id="listen-notes-label">Listening notes</span>
+            <div
+              id="listening-notes"
+              class="listen-note-editor"
+              contenteditable="true"
+              role="combobox"
+              aria-labelledby="listen-notes-label"
+              aria-describedby="listen-note-error"
+              aria-autocomplete="list"
+              aria-controls="listen-note-options"
+              aria-expanded="false"
+              data-placeholder="What stood out on this listen?"
+            ></div>
+            <textarea name="notes" hidden>
 ${escapeHtml(entry?.notes ?? "")}</textarea>
-          </label>
+            <small id="listen-note-error" role="alert"></small>
+            <div class="listen-note-picker" popover="manual">
+              <div
+                id="listen-note-options"
+                role="listbox"
+                aria-label="Smart links"
+              ></div>
+              <p class="listen-note-empty" role="status" hidden></p>
+            </div>
+          </div>
         </div>
         <div class="dialog-footer">
           <button type="button" class="button secondary" data-action="close">
@@ -110,8 +132,14 @@ ${escapeHtml(entry?.notes ?? "")}</textarea>
             : ""
         }
       </form>`,
-      entry ? '[name="notes"]' : '[name="date"]',
+      entry ? "#listening-notes" : '[name="date"]',
     );
+    new ListeningNoteEditor({
+      form: ops.editor.querySelector("#listen-form")!,
+      targets: () => listeningNoteTargets(ops.library()),
+      suggested: suggestedNoteLinks(album),
+    });
+
     const draftButton = ops.editor.querySelector<HTMLButtonElement>(
       ".listen-draft-button",
     )!;
@@ -167,7 +195,9 @@ ${escapeHtml(entry?.notes ?? "")}</textarea>
 
   function saveListenForm(form: HTMLFormElement): void {
     const data = new FormData(form);
-    const album = ops.albums().find((item) => item.id === form.dataset.id);
+    const album = ops
+      .library()
+      .albums.find((item) => item.id === form.dataset.id);
     if (!album) return;
     const entry = album.listeningEntries.find(
       (item) => item.id === form.dataset.entryId,
@@ -210,7 +240,9 @@ ${escapeHtml(entry?.notes ?? "")}</textarea>
       }
       case "delete-listen": {
         const form = button.closest<HTMLFormElement>("#listen-form");
-        const owner = ops.albums().find((item) => item.id === form?.dataset.id);
+        const owner = ops
+          .library()
+          .albums.find((item) => item.id === form?.dataset.id);
         if (
           !owner ||
           !owner.listeningEntries.some(
