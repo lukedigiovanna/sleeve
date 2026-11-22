@@ -1,19 +1,24 @@
 import { findCountry } from "../app/countries";
 import { libraryUrl } from "../app/libraryUrl";
 import { countryFlag } from "../components/countryFlag";
-import type { CatalogSort } from "../components/sortOptions";
 import {
-  catalogImage,
-  catalogSort,
-  catalogStats,
-  renderCatalogSummary,
-  type CatalogStats,
-  compareCatalog,
-} from "../components/catalogSummary";
+  artistSorting,
+  renderSortDropdown,
+  type ArtistSort,
+} from "../components/sortOptions";
+import { catalogImage, catalogStats } from "../components/catalogSummary";
+import { compareSortValues, type SortSelection } from "../app/librarySort";
+import { matchesAlbumGenres, type LibraryFilters } from "../app/libraryFilters";
+import { renderCategoryFilter } from "../components/libraryCategoryFilters";
+import { renderFilterChips } from "../components/libraryFilters";
+import type { LibraryData } from "../types/library";
 import { renderAlbumListHeading } from "../components/albumListHeading";
 import { renderCatalogHeading } from "../components/catalogHeading";
 import { renderExternalLinks } from "../components/externalLinks";
-import { renderCatalogFilters } from "../components/catalogFilters";
+import {
+  renderCatalogFilters,
+  renderFilterControls,
+} from "../components/catalogFilters";
 import type { Album, Artist } from "../types/albums";
 import { escapeHtml as e } from "../components/html";
 import { icon } from "../components/icons";
@@ -28,60 +33,78 @@ export const artistRoles = ["primary", "featured", "other"] as const;
 export const roleLabel = (role: string): string =>
   role.charAt(0).toUpperCase() + role.slice(1);
 
+export const artistFilterFields = ["country", "genres"] as const;
+export const defaultArtistSort = {
+  category: "name",
+  direction: "ascending",
+} as const satisfies SortSelection<ArtistSort>;
+
+export interface ArtistsState {
+  query: string;
+  filters: Pick<LibraryFilters, (typeof artistFilterFields)[number]>;
+  sort: SortSelection<ArtistSort> | null;
+}
+
 export function renderArtistsView(
-  query: string,
-  unused: boolean,
-  sort: CatalogSort = "updated",
-  primary = false,
+  state: ArtistsState,
+  data: LibraryData,
 ): string {
+  const controls = renderFilterControls(
+    artistFilterFields
+      .map((field) =>
+        renderCategoryFilter(field, state.filters, data, "artist"),
+      )
+      .join(""),
+    "artist",
+  );
+
   return /* HTML */ `<section
-    class="instrument-page catalog-page"
+    class="instrument-page catalog-page artists-page"
     aria-labelledby="page-title"
   >
     ${renderCatalogHeading("Artists", "artist")}
-    <div class="instrument-toolbar genre-toolbar">
+    <div class="toolbar library-toolbar">
       <label class="search-field"
         >${icon("search")}<span class="sr-only">Search artists</span
         ><input
           id="artists-search"
           type="search"
           placeholder="Find an artist…"
-          value="${e(query)}" /></label
-      >${renderCatalogFilters(/* HTML */ `${catalogSort("artists-sort", sort)}<label><input id="artists-unused" type="checkbox" ${unused ? "checked" : ""} /> Unused only</label><label><input id="artists-primary" type="checkbox" ${primary ? "checked" : ""} /> Primary artist only</label>`, Number(unused) + Number(primary))}
+          value="${e(state.query)}"
+      /></label>
+      ${renderCatalogFilters(controls, Object.keys(state.filters).length)}
+      ${renderSortDropdown(artistSorting, state.sort)}
+    </div>
+    <div id="artist-filter-chips" class="library-filter-chips">
+      ${renderFilterChips(state.filters, data, "artist")}
     </div>
     <p id="artists-count" class="result-count" role="status"></p>
     <div id="artists-list"></div>
   </section>`;
 }
+
 export function updateArtistsView(
-  artists: Artist[],
-  albums: Album[],
-  query: string,
-  unused: boolean,
+  data: LibraryData,
+  { query, filters, sort }: ArtistsState,
   root: ParentNode = document,
-  sort: CatalogSort = "updated",
-  primary = false,
 ): void {
-  const results = artists
-    .map((item) => {
-      const used = artistAlbums(albums, item.id).filter(
-        (album) =>
-          !primary ||
-          album.artists.some(
-            (artist) => artist.id === item.id && artist.role === "primary",
-          ),
-      );
-      const stats = catalogStats(used);
-      if (
-        item.updatedAt &&
-        Date.parse(item.updatedAt) > (Date.parse(stats.updated) || 0)
+  const order = sort ?? defaultArtistSort;
+  const countryIds = filters.country?.ids;
+  const genreArtistIds = filters.genres?.ids.length
+    ? new Set(
+        data.albums
+          .filter((album) =>
+            matchesAlbumGenres(album, data.genres, filters.genres),
+          )
+          .flatMap((album) => album.artists.map((artist) => artist.id)),
       )
-        stats.updated = item.updatedAt;
-      return { item, stats };
-    })
-    .filter(({ item, stats }) => {
+    : null;
+  const results = data.artists
+    .filter((item) => {
       const country = findCountry(item.country);
       return (
+        (!countryIds?.length || countryIds.includes(country?.id ?? "")) &&
+        (!genreArtistIds || genreArtistIds.has(item.id)) &&
         matches(
           query,
           item.name,
@@ -89,39 +112,57 @@ export function updateArtistsView(
           country?.name ?? "",
           country?.id ?? "",
           ...(country?.aliases ?? []),
-        ) &&
-        (!unused || !stats.count)
+        )
       );
+    })
+    .map((item) => {
+      const stats = catalogStats(artistAlbums(data.albums, item.id));
+      if (
+        item.updatedAt &&
+        Date.parse(item.updatedAt) > (Date.parse(stats.updated) || 0)
+      )
+        stats.updated = item.updatedAt;
+
+      return {
+        item,
+        count: stats.count,
+        name: item.sortName || item.name,
+        recent: stats.recent || null,
+        updated: stats.updated || null,
+      };
     })
     .sort(
       (a, b) =>
-        compareCatalog(a.stats, b.stats, sort) ||
-        (a.item.sortName || a.item.name).localeCompare(
-          b.item.sortName || b.item.name,
-        ),
+        compareSortValues(
+          a[order.category],
+          b[order.category],
+          order.direction,
+        ) || a.name.localeCompare(b.name),
     );
+
   root.querySelector("#artists-count")!.textContent =
     `${results.length} ${results.length === 1 ? "artist" : "artists"}`;
   root.querySelector("#artists-list")!.innerHTML = results.length
-    ? /* HTML */ `<ul class="instrument-catalog-list">
-        ${results.map(({ item, stats }) => renderArtistRow(item, stats)).join("")}
+    ? /* HTML */ `<ul class="artist-catalog-list">
+        ${results.map(({ item, count }) => renderArtistRow(item, count)).join("")}
       </ul>`
-    : renderArtistEmpty(Boolean(artists.length));
+    : renderArtistEmpty(Boolean(data.artists.length));
 }
-function renderArtistRow(item: Artist, stats: CatalogStats): string {
+
+function renderArtistRow(item: Artist, count: number): string {
   const country = findCountry(item.country);
   return /* HTML */ `<li>
-    <a class="instrument-catalog-row" href="${artistUrl(item.id)}"
-      >${catalogImage(item.name, item.photoUrl, true)}<span
-        class="catalog-card-content"
-        ><span class="instrument-row-info"
-          ><span
-            ><strong>${e(item.name)}</strong
-            >${country ? /* HTML */ ` <em class="artist-country">(${e(country.name)})</em>` : ""}</span
-          ></span
-        >${renderCatalogSummary(stats)}</span
-      >${icon("chevron", 18)}</a
-    >
+    <a class="artist-catalog-row" href="${artistUrl(item.id)}">
+      ${catalogImage(item.name, item.photoUrl, true)}
+      <span class="artist-catalog-identity">
+        <strong class="artist-catalog-name">${e(item.name)}</strong>
+        ${country ? /* HTML */ `<span class="artist-catalog-country" role="img" aria-label="${e(country.name)}" title="${e(country.name)}">${countryFlag(country)}</span>` : ""}
+      </span>
+      <span class="artist-catalog-count"
+        >${count} ${count === 1 ? "album" : "albums"}</span
+      >
+      ${icon("chevron", 16)}
+    </a>
   </li>`;
 }
 

@@ -1,19 +1,19 @@
-import {
-  isLibrarySort,
-  renderLibrarySortChoices,
-} from "../components/sortOptions";
-import { cycleLibrarySort } from "./librarySort";
+import { librarySorting, selectBrowseSort } from "../components/sortOptions";
 import type { Album, Artist, Genre, Instrument } from "../types/albums";
 import type { LibraryData } from "../types/library";
 import { isLibraryRoute, libraryUrl, parseLibraryUrl } from "./libraryUrl";
 import { filterFields } from "./libraryFilters";
 import {
   readLibraryFilters,
-  renderFilterChips,
+  updateBrowseFilters,
   toggleSelectedRating,
 } from "../components/libraryFilters";
-import { categoryFields, categoryName } from "./libraryCategoryFilters";
-import { updateCategoryFilter } from "../components/libraryCategoryFilters";
+import { categoryFields } from "./libraryCategoryFilters";
+import {
+  searchCategoryFilter,
+  selectCategoryFilter,
+  type CategoryFilterControls,
+} from "../components/libraryCategoryFilters";
 import type { LibraryState } from "../views/libraryView";
 import { renderLibraryView, updateLibrary } from "../views/libraryView";
 import { renderAlbumDetailView } from "../views/albumDetailView";
@@ -355,19 +355,10 @@ export class AppRouter {
         return true;
       }
       case "library-sort": {
-        const category = button.dataset.sort;
-        if (!category || !isLibrarySort(category)) return false;
+        const sort = selectBrowseSort(button, librarySorting, this.state.sort);
+        if (sort === undefined) return false;
 
-        this.state.sort = cycleLibrarySort(this.state.sort, category);
-        const panel = this.dependencies.main.querySelector(
-          ".library-sort-panel",
-        );
-        if (panel) {
-          panel.innerHTML = renderLibrarySortChoices(this.state.sort);
-          panel
-            .querySelector<HTMLElement>(`[data-sort="${category}"]`)
-            ?.focus({ preventScroll: true });
-        }
+        this.state.sort = sort;
         updateLibrary(
           this.dependencies.library().albums,
           this.state,
@@ -421,39 +412,9 @@ export class AppRouter {
       }
       case "add-library-category":
       case "remove-library-category": {
-        const field = categoryFields.find(
-          (field) => field === button.dataset.category,
-        );
-        const data = this.dependencies.library();
-        const id = button.dataset.id;
-        if (!field || !id || !categoryName(data, field, id)) return false;
-        const ids = new Set(this.state.filters[field]?.ids ?? []);
-        const adding = button.dataset.action === "add-library-category";
-        if (adding) ids.add(id);
-        else ids.delete(id);
-        if (ids.size) this.state.filters[field] = { ids: [...ids] };
-        else delete this.state.filters[field];
-
-        updateCategoryFilter(
-          this.dependencies.main,
-          field,
-          this.state.filters,
-          data,
-        );
+        if (!selectCategoryFilter(button, this.categoryControls()))
+          return false;
         this.updateLibraryResults();
-        const group = this.dependencies.main.querySelector<HTMLElement>(
-          `.category-filter[data-category="${field}"]`,
-        )!;
-        const buttons = group.querySelectorAll<HTMLButtonElement>(
-          adding
-            ? "[data-category-selected] button"
-            : "[data-category-results] button",
-        );
-        const focus =
-          [...buttons].find((candidate) => candidate.dataset.id === id) ??
-          buttons[0] ??
-          group.querySelector<HTMLInputElement>("input")!;
-        focus.focus({ preventScroll: true });
         return true;
       }
       case "clear-library-year": {
@@ -489,16 +450,7 @@ export class AppRouter {
 
   public input(input: HTMLInputElement): void {
     if (input.dataset.categorySearch) {
-      const field = categoryFields.find(
-        (field) => field === input.dataset.categorySearch,
-      );
-      if (field)
-        updateCategoryFilter(
-          this.dependencies.main,
-          field,
-          this.state.filters,
-          this.dependencies.library(),
-        );
+      searchCategoryFilter(input, this.categoryControls());
       return;
     }
     if (input.id !== "library-query") return;
@@ -513,7 +465,7 @@ export class AppRouter {
 
   public change(input: HTMLInputElement): void {
     if (
-      input.closest(".library-filter-controls") &&
+      input.closest(".library .library-filter-controls") &&
       !input.dataset.categorySearch
     ) {
       const root = this.dependencies.main;
@@ -522,27 +474,24 @@ export class AppRouter {
     }
   }
 
+  private categoryControls(): CategoryFilterControls {
+    return {
+      scope: "library",
+      fields: categoryFields,
+      filters: this.state.filters,
+      data: this.dependencies.library(),
+    };
+  }
+
   private updateLibraryResults(): void {
     this.syncLibraryUrl();
     const root = this.dependencies.main;
-    root.querySelector("#library-filter-chips")!.innerHTML = renderFilterChips(
+    updateBrowseFilters(
+      root,
       this.state.filters,
       this.dependencies.library(),
+      "library",
     );
-    const count = Object.keys(this.state.filters).length;
-    const summary = root.querySelector(
-      ".library-toolbar .genre-filter-dropdown > summary",
-    )!;
-    summary.setAttribute(
-      "aria-label",
-      `Filters${count ? `, ${count} active` : ""}`,
-    );
-    summary.querySelector(".genre-filter-count")?.remove();
-    if (count)
-      summary.insertAdjacentHTML(
-        "beforeend",
-        /* HTML */ `<span class="genre-filter-count">${count}</span>`,
-      );
     updateLibrary(
       this.dependencies.library().albums,
       this.state,

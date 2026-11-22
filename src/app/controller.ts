@@ -67,6 +67,16 @@ export class AppController {
     "genre-layout",
     "clear",
     "clear-artist-filters",
+    "artist-sort",
+    "add-artist-category",
+    "remove-artist-category",
+    "remove-artist-filter",
+    "library-sort",
+    "add-library-category",
+    "remove-library-category",
+    "remove-library-filter",
+    "clear-library-filters",
+    "clear-library-year",
     "clear-instrument-filters",
     "close",
   ]);
@@ -266,20 +276,12 @@ export class AppController {
           this.persistence.finishCatalogSave(message, destination),
       },
       navigation: {
-        renderRoute: (focus) => this.router.render(focus),
+        renderRoute: () => this.router.render(),
         updateCatalogFilters: (id) => this.router.updateCatalogFilters(id),
       },
       picker: pickerInteraction,
-      library: {
-        get albums() {
-          return controller.library.data.albums;
-        },
-        get artists() {
-          return controller.library.data.artists;
-        },
-        set artists(value) {
-          controller.library.data.artists = value;
-        },
+      get library() {
+        return controller.library.data;
       },
     });
   }

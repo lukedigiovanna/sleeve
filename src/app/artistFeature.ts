@@ -1,6 +1,11 @@
-import { isCatalogSort, type CatalogSort } from "../components/sortOptions";
+import { artistSorting, selectBrowseSort } from "../components/sortOptions";
+import {
+  searchCategoryFilter,
+  selectCategoryFilter,
+  type CategoryFilterControls,
+} from "../components/libraryCategoryFilters";
+import { updateBrowseFilters } from "../components/libraryFilters";
 import type { EditorDialog, PickerInteraction } from "./editorContracts";
-import { renderArtistsView } from "../views/artistsView";
 import { updateCatalogImage } from "../components/formFields";
 import type { DraftTarget } from "./editorDrafts";
 
@@ -17,6 +22,10 @@ import { artistIdentity, findArtist } from "./artistIdentity";
 import { makeId } from "./id";
 import {
   artistUrl,
+  artistFilterFields,
+  defaultArtistSort,
+  renderArtistsView,
+  type ArtistsState,
   artistAlbums,
   artistRoles,
   roleLabel,
@@ -46,12 +55,9 @@ export interface ArtistFeatureDependencies {
     finishCatalogSave: (message: string, destination: string) => Promise<void>;
   };
   picker: PickerInteraction;
-  library: {
-    readonly albums: LibraryData["albums"];
-    artists: LibraryData["artists"];
-  };
+  readonly library: LibraryData;
   navigation: {
-    renderRoute: (focus?: boolean) => void;
+    renderRoute: () => void;
     updateCatalogFilters: (id: string) => void;
   };
 }
@@ -133,10 +139,11 @@ export class ArtistFeature {
   private readonly dependencies: ArtistFeatureDependencies;
   private selectedArtists: AlbumArtist[] = [];
   private artistChoices: Artist[] = [];
-  private artistQuery = "";
-  private artistUnused = false;
-  private artistSort: CatalogSort = "updated";
-  private artistPrimary = false;
+  private readonly browse: ArtistsState = {
+    query: "",
+    filters: {},
+    sort: defaultArtistSort,
+  };
 
   constructor(dependencies: ArtistFeatureDependencies) {
     this.dependencies = dependencies;
@@ -295,16 +302,55 @@ export class ArtistFeature {
         : "");
   }
 
+  private categoryControls(): CategoryFilterControls {
+    return {
+      scope: "artist",
+      fields: artistFilterFields,
+      filters: this.browse.filters,
+      data: this.dependencies.library,
+    };
+  }
+
   private updateArtistList(): void {
-    updateArtistsView(
-      this.dependencies.library.artists,
-      this.dependencies.library.albums,
-      this.artistQuery,
-      this.artistUnused,
-      document,
-      this.artistSort,
-      this.artistPrimary,
+    updateArtistsView(this.dependencies.library, this.browse);
+  }
+
+  private updateArtistFilters(): void {
+    const root = document.querySelector<HTMLElement>(".artists-page")!;
+    updateBrowseFilters(
+      root,
+      this.browse.filters,
+      this.dependencies.library,
+      "artist",
     );
+    this.updateArtistList();
+  }
+
+  private clearArtistFilters(button: HTMLButtonElement): void {
+    this.browse.filters = {};
+
+    if (button.closest(".genre-filter-dropdown")) {
+      this.dependencies.navigation.updateCatalogFilters(
+        "artist-country-search",
+      );
+      return;
+    }
+
+    this.browse.query = "";
+    this.dependencies.navigation.renderRoute();
+    focusForTyping(document.querySelector<HTMLInputElement>("#artists-search"));
+  }
+
+  private clearArtistFilterChip(
+    field: (typeof artistFilterFields)[number],
+  ): void {
+    delete this.browse.filters[field];
+    this.dependencies.navigation.renderRoute();
+    document
+      .querySelector<HTMLElement>(
+        ".artists-page .genre-filter-dropdown summary",
+      )
+      ?.focus();
   }
 
   public click(button: HTMLButtonElement): boolean {
@@ -369,11 +415,29 @@ export class ArtistFeature {
           );
         }
         break;
+      case "artist-sort": {
+        const sort = selectBrowseSort(button, artistSorting, this.browse.sort);
+        if (sort === undefined) return false;
+        this.browse.sort = sort;
+        this.updateArtistList();
+        break;
+      }
+      case "add-artist-category":
+      case "remove-artist-category":
+        if (!selectCategoryFilter(button, this.categoryControls()))
+          return false;
+        this.updateArtistFilters();
+        break;
+      case "remove-artist-filter": {
+        const field = artistFilterFields.find(
+          (field) => field === button.dataset.filter,
+        );
+        if (!field) return false;
+        this.clearArtistFilterChip(field);
+        break;
+      }
       case "clear-artist-filters":
-        this.artistPrimary = false;
-        this.artistQuery = "";
-        this.artistUnused = false;
-        this.dependencies.navigation.renderRoute();
+        this.clearArtistFilters(button);
         break;
       case "create-artist":
       case "select-artist": {
@@ -478,28 +542,15 @@ export class ArtistFeature {
       updateCatalogImage(input);
 
     if (input.id === "artists-search") {
-      this.artistQuery = input.value;
+      this.browse.query = input.value;
       this.updateArtistList();
     }
     if (input.id === "artist-query") this.updateArtists();
+    if (input.dataset.categorySearch)
+      searchCategoryFilter(input, this.categoryControls());
   }
 
   public change(input: HTMLInputElement): void {
-    if (input.id === "artists-sort" && isCatalogSort(input.value)) {
-      this.artistSort = input.value;
-      this.updateArtistList();
-    }
-
-    if (input.id === "artists-primary") {
-      this.artistPrimary = input.checked;
-      this.dependencies.navigation.updateCatalogFilters(input.id);
-    }
-
-    if (input.id === "artists-unused") {
-      this.artistUnused = input.checked;
-      this.dependencies.navigation.updateCatalogFilters(input.id);
-    }
-
     if (input.dataset.artistRole && isArtistRole(input.value)) {
       const credit = this.selectedArtists.find(
         (item) => item.id === input.dataset.artistRole,
@@ -509,20 +560,7 @@ export class ArtistFeature {
   }
 
   public renderList(root: HTMLElement): void {
-    root.innerHTML = renderArtistsView(
-      this.artistQuery,
-      this.artistUnused,
-      this.artistSort,
-      this.artistPrimary,
-    );
-    updateArtistsView(
-      this.dependencies.library.artists,
-      this.dependencies.library.albums,
-      this.artistQuery,
-      this.artistUnused,
-      root,
-      this.artistSort,
-      this.artistPrimary,
-    );
+    root.innerHTML = renderArtistsView(this.browse, this.dependencies.library);
+    updateArtistsView(this.dependencies.library, this.browse, root);
   }
 }

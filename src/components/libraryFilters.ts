@@ -6,6 +6,11 @@ import {
   categoryName,
   type CategoryField,
 } from "../app/libraryCategoryFilters";
+import {
+  renderFilterControls,
+  updateFilterCount,
+  type BrowseScope,
+} from "./catalogFilters";
 import { renderCategoryFilter } from "./libraryCategoryFilters";
 import { icon, starPath } from "./icons";
 import {
@@ -240,18 +245,12 @@ export function renderLibraryFilters(
   filters: LibraryFilters,
   data: LibraryData,
 ): string {
-  return /* HTML */ `<div class="library-filter-controls">
-    ${numericControl("rating", filters.rating)}${numericControl("releaseYear", filters.releaseYear)}
+  return renderFilterControls(
+    /* HTML */ `${numericControl("rating", filters.rating)}${numericControl("releaseYear", filters.releaseYear)}
     ${renderVinylFilter(filters)}
-    ${categoryFields.map((field) => renderCategoryFilter(field, filters, data)).join("")}
-    <button
-      class="button secondary"
-      type="button"
-      data-action="clear-library-filters"
-    >
-      Clear filters
-    </button>
-  </div>`;
+    ${categoryFields.map((field) => renderCategoryFilter(field, filters, data)).join("")}`,
+    "library",
+  );
 }
 
 interface NumericChip {
@@ -315,6 +314,7 @@ function renderNumericChip(
 export function renderFilterChips(
   filters: LibraryFilters,
   data: LibraryData,
+  scope: BrowseScope = "library",
 ): string {
   return filterFields
     .filter((field) => filters[field] !== undefined)
@@ -346,7 +346,7 @@ export function renderFilterChips(
       return /* HTML */ `<button
         type="button"
         class="button secondary filter-chip"
-        data-action="remove-library-filter"
+        data-action="remove-${scope}-filter"
         data-filter="${field}"
         aria-label="Remove ${labels[field]} filter"
         aria-description="${escapeHtml(description)}"
@@ -356,6 +356,20 @@ export function renderFilterChips(
       </button>`;
     })
     .join("");
+}
+
+export function updateBrowseFilters(
+  root: ParentNode,
+  filters: LibraryFilters,
+  data: LibraryData,
+  scope: BrowseScope,
+): void {
+  root.querySelector(`#${scope}-filter-chips`)!.innerHTML = renderFilterChips(
+    filters,
+    data,
+    scope,
+  );
+  updateFilterCount(root, Object.keys(filters).length);
 }
 
 function validBound(field: "rating" | "releaseYear", value: number): boolean {

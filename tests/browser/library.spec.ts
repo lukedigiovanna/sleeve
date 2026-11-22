@@ -99,9 +99,25 @@ test("library heading matches catalog typography and spacing", async ({
         };
       });
     const library = await measureHeading();
-    await page.locator('[data-nav="artists"]').click();
-    await expect(page.locator("#page-title")).toHaveText("Artists");
-    expect(await measureHeading()).toEqual(library);
+    const measureResultsGap = () =>
+      page.locator("main .result-count").evaluate((count) => {
+        const firstResult = count.nextElementSibling!.querySelector("li")!;
+        return (
+          firstResult.getBoundingClientRect().top -
+          count.getBoundingClientRect().bottom
+        );
+      });
+    const libraryResultsGap = await measureResultsGap();
+    for (const [route, title] of [
+      ["artists", "Artists"],
+      ["genres", "Genres"],
+      ["instruments", "Instruments"],
+    ]) {
+      await page.locator(`[data-nav="${route}"]`).click();
+      await expect(page.locator("#page-title")).toHaveText(title);
+      expect(await measureHeading()).toEqual(library);
+      expect(await measureResultsGap()).toBe(libraryResultsGap);
+    }
     await page.locator('[data-nav="library"]').click();
     await expect(page.locator("#page-title")).toHaveText("Your library");
   }
@@ -941,12 +957,14 @@ test("artist countries link to a shareable Library filter with collaboration mat
       id: "country-test-album-tw",
       title: "Country test Taiwan solo",
       artists: [{ ...taiwan, role: "primary", position: 0 }],
+      genres: [],
     },
     {
       ...album,
       id: "country-test-album-unknown",
       title: "Country test unknown origin",
       artists: [],
+      genres: [],
     },
   ];
   const otherArtist = {
@@ -975,9 +993,79 @@ test("artist countries link to a shareable Library filter with collaboration mat
   await countryInput.press("Escape");
   await expect(countryInput).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Escape");
+
+  const filters = page.locator(
+    '.library-toolbar summary[aria-label^="Filters"]',
+  );
+  await filters.click();
+  await page
+    .getByRole("searchbox", { name: "Search artist countries" })
+    .fill("Taiwan");
+  await page.getByRole("button", { name: "Add Taiwan" }).click();
+  await expect(filters).toHaveAccessibleName("Filters, 1 active");
+  await expect(page.locator("#artists-count")).toHaveText("2 artists");
+  const genre = album.genres[0].name;
+  await page.getByRole("searchbox", { name: "Search genres" }).fill(genre);
+  await page.getByRole("button", { name: `Add ${genre}`, exact: true }).click();
+  await expect(page.locator("#artists-count")).toHaveText("1 artist");
+  await expect(page.locator(".artist-catalog-row")).toContainText(
+    "Country test collaborator",
+  );
+  await expect(
+    page.getByRole("button", { name: "Remove Genre filter" }),
+  ).toHaveText(genre);
+  await page
+    .locator(".library-filter-controls")
+    .getByRole("button", { name: "Clear filters" })
+    .click();
+  await expect(filters).toHaveAccessibleName("Filters");
+  await expect(page.locator("#artists-count")).toHaveText("3 artists");
+
+  await page.locator('summary[aria-label="Sort artists"]').click();
+  const alphabetical = page.locator(
+    '[data-action="artist-sort"][data-sort="name"]',
+  );
+  const names = page.locator(".artist-catalog-name");
+  await expect(alphabetical).toHaveAccessibleName("Alphabetical, ascending");
+  await expect(names.first()).toHaveText("Country test artist");
+  await alphabetical.click();
+  await expect(alphabetical).toHaveAccessibleName("Alphabetical, descending");
+  await expect(names.first()).toHaveText("Country test extra");
+  await alphabetical.click();
+  await expect(alphabetical).toHaveAccessibleName("Alphabetical, off");
+  await expect(names.first()).toHaveText("Country test artist");
+  const albumCount = page.getByRole("button", { name: /^Album count,/ });
+  await albumCount.click();
+  await expect(albumCount).toHaveAccessibleName("Album count, ascending");
+  await expect(names.first()).toHaveText("Country test extra");
+  await albumCount.click();
+  await expect(albumCount).toHaveAccessibleName("Album count, descending");
+  await expect(names.first()).toHaveText("Country test collaborator");
+  await page.getByRole("button", { name: "Last logged, off" }).click();
+  await expect(names.last()).toHaveText("Country test extra");
+  await page.getByRole("button", { name: "Last updated, off" }).click();
+  await expect(
+    page.getByRole("button", { name: "Last logged, off" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
   await page.locator("#artists-search").fill("Taiwan");
   await expect(page.locator("#artists-count")).toHaveText("2 artists");
-  await page.getByRole("link", { name: /Country test collaborator/ }).click();
+  const collaborator = page.getByRole("link", {
+    name: /Country test collaborator/,
+  });
+  await expect(collaborator.getByRole("img", { name: "Taiwan" })).toBeVisible();
+  await expect(
+    collaborator.getByText("2 albums", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("link", { name: /Country test extra/ })
+      .getByText("0 albums", { exact: true }),
+  ).toBeVisible();
+  const row = await collaborator.boundingBox();
+  expect(row?.height).toBeLessThanOrEqual(56);
+  await collaborator.click();
   await page
     .getByRole("link", { name: "Browse albums by artists from Taiwan" })
     .click();

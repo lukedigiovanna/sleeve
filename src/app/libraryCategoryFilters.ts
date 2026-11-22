@@ -29,15 +29,20 @@ export function categoryChoices(
   field: CategoryField,
   selected: readonly string[],
   query: string,
+  scope: "library" | "artist" = "library",
 ): CategoryChoice[] {
   const selection = new Set(selected);
   const search = query.trim().toLocaleLowerCase();
 
   if (field === "country") {
     const counts = new Map<string, CategoryChoice>();
-    for (const album of data.albums) {
+    const credits =
+      scope === "artist"
+        ? data.artists.map((artist) => [artist])
+        : data.albums.map((album) => album.artists);
+    for (const artists of credits) {
       const codes = new Set(
-        album.artists.map((artist) => findCountry(artist.country)?.id),
+        artists.map((artist) => findCountry(artist.country)?.id),
       );
       for (const code of codes) {
         const country = findCountry(code);
@@ -70,7 +75,7 @@ export function categoryChoices(
         item.name.toLocaleLowerCase().includes(search),
     )
     .map((item) => {
-      const count = data.albums.filter((album) => {
+      const albums = data.albums.filter((album) => {
         switch (field) {
           case "genres":
             return includesGenre(album, item.id, data.genres);
@@ -83,7 +88,15 @@ export function categoryChoices(
               (instrument) => instrument.id === item.id,
             );
         }
-      }).length;
+      });
+      const count =
+        scope === "artist"
+          ? new Set(
+              albums.flatMap((album) =>
+                album.artists.map((artist) => artist.id),
+              ),
+            ).size
+          : albums.length;
       return { id: item.id, name: item.name, count };
     })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));

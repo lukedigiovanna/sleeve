@@ -43,7 +43,7 @@
   color: var(--muted);
   font-size: 12px;
 }
-:is(#artists-list, #instruments-list) .catalog-stats {
+#instruments-list .catalog-stats {
   color: var(--muted);
   gap: 36px;
 }
@@ -127,14 +127,14 @@
 }
 
 @media (max-width: 600px) {
-  :is(#artists-list, #instruments-list) .instrument-catalog-row {
+  #instruments-list .instrument-catalog-row {
     grid-template-columns: 72px minmax(0, 1fr) 16px;
     grid-template-rows: auto;
     column-gap: 12px;
     align-items: center;
     padding: 12px;
   }
-  :is(#artists-list, #instruments-list) .catalog-image {
+  #instruments-list .catalog-image {
     grid-column: 1;
     grid-row: 1;
     align-self: stretch;
@@ -144,7 +144,7 @@
     border-radius: 10px;
     font-size: 22px;
   }
-  :is(#artists-list, #instruments-list) .catalog-card-content {
+  #instruments-list .catalog-card-content {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -153,34 +153,34 @@
     grid-column: 2;
     grid-row: 1;
   }
-  :is(#artists-list, #instruments-list) .instrument-row-info {
+  #instruments-list .instrument-row-info {
     grid-column: 2;
     grid-row: 1;
     line-height: 1.25;
     gap: 3px;
   }
-  :is(#artists-list, #instruments-list) .instrument-row-info strong {
+  #instruments-list .instrument-row-info strong {
     font-size: 20px;
     line-height: 1.25;
   }
-  :is(#artists-list, #instruments-list) .catalog-stats {
+  #instruments-list .catalog-stats {
     grid-column: 2;
     grid-row: 2;
     gap: 24px;
     flex-wrap: nowrap;
   }
-  :is(#artists-list, #instruments-list) .catalog-stats > span {
+  #instruments-list .catalog-stats > span {
     min-width: 0;
     gap: 0;
     line-height: 1.2;
   }
-  :is(#artists-list, #instruments-list) .catalog-stats strong {
+  #instruments-list .catalog-stats strong {
     font-size: 15px;
   }
-  :is(#artists-list, #instruments-list) .catalog-stats small {
+  #instruments-list .catalog-stats small {
     font-size: 11px;
   }
-  :is(#artists-list, #instruments-list) .instrument-catalog-row > .icon {
+  #instruments-list .instrument-catalog-row > .icon {
     grid-row: 1;
     align-self: center;
   }

@@ -5,7 +5,7 @@ import {
   compareLibraryAlbums,
   type LibrarySortSelection,
 } from "../app/librarySort";
-import { renderLibrarySortChoices } from "../components/sortOptions";
+import { librarySorting, renderSortDropdown } from "../components/sortOptions";
 import type { Genre } from "../types/albums";
 import type { LibraryData } from "../types/library";
 import {
@@ -52,14 +52,7 @@ export function renderLibraryView(
           value="${escapeHtml(state.query)}"
       /></label>
       ${renderCatalogFilters(renderLibraryFilters(state.filters, data), Object.keys(state.filters).length)}
-      <details class="library-sort-dropdown">
-        <summary class="button secondary library-sort" aria-label="Sort albums">
-          ${icon("sort", 18)}<span class="library-sort-text">Sort</span>
-        </summary>
-        <div class="library-sort-panel" role="group" aria-label="Sort albums">
-          ${renderLibrarySortChoices(state.sort)}
-        </div>
-      </details>
+      ${renderSortDropdown(librarySorting, state.sort)}
     </div>
     <div id="library-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data)}
