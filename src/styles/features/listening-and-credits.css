@@ -180,3 +180,80 @@
     font-size: 16px;
   }
 }
+
+.activity {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.activity-day {
+  margin-top: 24px;
+}
+
+.activity-day h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.activity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-entry {
+  display: grid;
+  position: relative;
+  --activity-artwork-size: 60px;
+  grid-template-columns: var(--activity-artwork-size) minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.activity-entry > .cover {
+  aspect-ratio: auto;
+  min-height: var(--activity-artwork-size);
+}
+
+.activity-entry > .listen-notes {
+  grid-column: 2;
+}
+
+.activity-entry .listen-note-link {
+  position: relative;
+  z-index: 1;
+}
+
+.activity-album::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+.activity-entry:has(.activity-album:hover) {
+  background: var(--panel-hover);
+}
+
+.activity-entry:has(.activity-album:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.activity-album {
+  color: var(--ink);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.activity-artist {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.activity-entry .rating {
+  display: inline-flex;
+  margin-top: 5px;
+}

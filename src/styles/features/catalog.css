@@ -25,7 +25,8 @@
   color: var(--sage-strong);
 }
 .instrument-page,
-.library {
+.library,
+.activity {
   padding: var(--page-top-gap) 0 40px;
 }
 .instrument-page-heading {
@@ -37,7 +38,8 @@
   margin-bottom: 26px;
 }
 .instrument-page h1,
-.library h1 {
+.library h1,
+.activity h1 {
   font: 400 clamp(36px, 6vw, 54px)/1.15 var(--serif);
   margin: 0 0 12px;
   overflow-wrap: anywhere;

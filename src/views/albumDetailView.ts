@@ -19,22 +19,14 @@ import { escapeHtml } from "../components/html";
 import { instrumentUrl } from "../app/instruments";
 import { icon } from "../components/icons";
 import { renderExternalLinks } from "../components/externalLinks";
+import { formatListeningDate } from "../components/listeningDate";
 import { renderRating } from "../components/rating";
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(date.slice(0, 10) + "T00:00:00Z"));
-}
 
 function historyCard(
   listen: ListeningEntry,
   targets: ReadonlyMap<string, NoteLinkTarget>,
 ): string {
-  const date = formatDate(listen.listenedAt);
+  const date = formatListeningDate(listen.listenedAt);
   const note = renderListeningNote(listen.notes ?? "", targets);
   const label = `Edit listen from ${date}`;
   const body = /* HTML */ `<span class="listen-top">

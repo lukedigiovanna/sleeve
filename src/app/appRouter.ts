@@ -16,6 +16,7 @@ import {
 } from "../components/libraryCategoryFilters";
 import type { LibraryState } from "../views/libraryView";
 import { renderLibraryView, updateLibrary } from "../views/libraryView";
+import { renderActivityView } from "../views/activityView";
 import { renderAlbumDetailView } from "../views/albumDetailView";
 import { artistUrl, renderArtistDetail } from "../views/artistsView";
 import { renderGenreDetail } from "../views/genresView";
@@ -33,7 +34,7 @@ import { createLifecycle } from "./lifecycle";
 import { renderProfileView, type YearGrouping } from "../views/profileView";
 
 type RouteSection =
-  "profile" | "genres" | "artists" | "instruments" | "library";
+  "profile" | "genres" | "artists" | "instruments" | "activity" | "library";
 
 interface RouteItems {
   genre: Genre | undefined;
@@ -48,10 +49,12 @@ const listRouteLabels = new Map([
   ["#artists", "artists"],
   ["#genres", "genres"],
   ["#instruments", "instruments"],
+  ["#activity", "activity"],
 ]);
 
 function routeSection(hash: string): RouteSection {
   if (hash === "#profile") return "profile";
+  if (hash === "#activity") return "activity";
   if (hash === "#genres" || hash.startsWith("#genre/")) return "genres";
   if (hash === "#artists" || hash.startsWith("#artist/")) return "artists";
   if (hash === "#instruments" || hash.startsWith("#instrument/"))
@@ -142,6 +145,8 @@ export class AppRouter {
     if (hash === "#artists") this.dependencies.lists.artists(root);
     else if (hash === "#genres") this.dependencies.lists.genres(root);
     else if (hash === "#instruments") this.dependencies.lists.instruments(root);
+    else if (hash === "#activity")
+      root.innerHTML = renderActivityView(this.dependencies.library());
     else {
       const state =
         root === this.dependencies.main
@@ -201,8 +206,11 @@ export class AppRouter {
           <h1 id="page-title">Genre unavailable</h1>
           <a href="#genres">Back to genres</a>
         </div>`;
-    } else if (location.hash === "#artists") {
-      this.renderListRoute("#artists", this.dependencies.main);
+    } else if (
+      listRouteLabels.has(location.hash) &&
+      !isLibraryRoute(location.hash)
+    ) {
+      this.renderListRoute(location.hash, this.dependencies.main);
     } else if (artist) {
       this.dependencies.main.innerHTML = renderArtistDetail(
         artist,
@@ -214,8 +222,6 @@ export class AppRouter {
         <h1 id="page-title">Artist unavailable</h1>
         <a href="#artists">Back to artists</a>
       </div>`;
-    } else if (location.hash === "#instruments") {
-      this.renderListRoute("#instruments", this.dependencies.main);
     } else if (instrument) {
       this.dependencies.main.innerHTML = renderInstrumentDetail(
         instrument,
@@ -275,6 +281,7 @@ export class AppRouter {
   private routeLabel(hash: string): string {
     if (isLibraryRoute(hash)) return "library";
     if (hash === "#profile") return "profile";
+    if (hash === "#activity") return "activity";
     const listLabel = listRouteLabels.get(hash);
     if (listLabel !== undefined) return listLabel;
 
@@ -310,6 +317,8 @@ export class AppRouter {
     switch (section) {
       case "profile":
         return "Profile — Sleeve";
+      case "activity":
+        return "Activity — Sleeve";
       case "genres":
         return `${items.genre?.name ?? "Genres"} — Sleeve`;
       case "artists":
