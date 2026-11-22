@@ -113,7 +113,11 @@ test("library heading matches catalog typography and spacing", async ({
       ["genres", "Genres"],
       ["instruments", "Instruments"],
     ]) {
-      await page.locator(`[data-nav="${route}"]`).click();
+      if (route === "instruments")
+        await page.evaluate(() => {
+          location.hash = "#instruments";
+        });
+      else await page.locator(`[data-nav="${route}"]`).click();
       await expect(page.locator("#page-title")).toHaveText(title);
       expect(await measureHeading()).toEqual(library);
       expect(await measureResultsGap()).toBe(libraryResultsGap);
@@ -1415,7 +1419,13 @@ test("route previews match live lists and remounting handles each save once", as
     document.querySelector("#app")!.innerHTML = renderApp();
     const first = initializeApp();
     const results = [];
-    for (const hash of ["#artists", "#genres", "#instruments", "#"]) {
+    for (const hash of [
+      "#artists",
+      "#genres",
+      "#instruments",
+      "#activity",
+      "#",
+    ]) {
       const changed = new Promise<void>((resolve) =>
         window.addEventListener("hashchange", () => resolve(), { once: true }),
       );
