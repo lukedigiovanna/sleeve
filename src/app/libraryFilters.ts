@@ -82,6 +82,17 @@ function matchesRating(album: Album, filter?: NumericFilter): boolean {
   return matchesNumeric(listen ? listen.rating / 2 : null, filter);
 }
 
+export function matchesAlbumGenres(
+  album: Album,
+  genres: Genre[],
+  filter?: CategorySelection,
+): boolean {
+  return (
+    !filter?.ids.length ||
+    filter.ids.some((id) => includesGenre(album, id, genres))
+  );
+}
+
 export function matchesLibraryFilters(
   album: Album,
   filters: LibraryFilters,
@@ -93,12 +104,7 @@ export function matchesLibraryFilters(
     matchesRating(album, filters.rating) &&
     (!filters.releaseYear ||
       matchesNumeric(album.releaseYear, filters.releaseYear)) &&
-    (!filters.genres ||
-      matchesCategory(
-        album.genres.map((item) => item.id),
-        { mode: "any", ids: filters.genres.ids },
-        (id) => includesGenre(album, id, genres),
-      )) &&
+    matchesAlbumGenres(album, genres, filters.genres) &&
     (!filters.artists ||
       matchesCategory(
         album.artists

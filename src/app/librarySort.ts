@@ -2,21 +2,25 @@ import type { LibrarySort } from "../components/sortOptions.ts";
 import { latest, latestRatedListen } from "../components/presentation.ts";
 import type { Album } from "../types/albums.ts";
 
-export interface LibrarySortSelection {
-  category: LibrarySort;
+export interface SortSelection<Category extends string> {
+  category: Category;
   direction: "ascending" | "descending";
 }
 
-export function cycleLibrarySort(
-  current: LibrarySortSelection | null,
-  category: LibrarySort,
-): LibrarySortSelection | null {
+export type LibrarySortSelection = SortSelection<LibrarySort>;
+
+export function cycleSort<Category extends string>(
+  current: SortSelection<Category> | null,
+  category: Category,
+): SortSelection<Category> | null {
   if (current?.category !== category)
     return { category, direction: "ascending" };
   if (current.direction === "ascending")
     return { category, direction: "descending" };
   return null;
 }
+
+export const cycleLibrarySort = cycleSort<LibrarySort>;
 
 function sortValue(
   album: Album,
@@ -41,9 +45,20 @@ export function compareLibraryAlbums(
   b: Album,
   sort: LibrarySortSelection,
 ): number {
-  const left = sortValue(a, sort.category);
-  const right = sortValue(b, sort.category);
+  return (
+    compareSortValues(
+      sortValue(a, sort.category),
+      sortValue(b, sort.category),
+      sort.direction,
+    ) || (a.sortTitle || a.title).localeCompare(b.sortTitle || b.title)
+  );
+}
 
+export function compareSortValues(
+  left: string | number | null,
+  right: string | number | null,
+  direction: SortSelection<string>["direction"],
+): number {
   if (left === null && right !== null) return 1;
   if (right === null && left !== null) return -1;
 
@@ -53,9 +68,5 @@ export function compareLibraryAlbums(
   if (typeof left === "string" && typeof right === "string")
     comparison = left.localeCompare(right);
 
-  const direction = sort.direction === "ascending" ? 1 : -1;
-  return (
-    comparison * direction ||
-    (a.sortTitle || a.title).localeCompare(b.sortTitle || b.title)
-  );
+  return direction === "ascending" ? comparison : -comparison;
 }
