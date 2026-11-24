@@ -67,7 +67,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  min-height: 56px;
+  min-height: 70px;
   margin-bottom: 12px;
 }
 
@@ -76,10 +76,8 @@
 }
 
 .artist-page-heading .catalog-image {
-  align-self: stretch;
-  width: 56px;
-  height: auto;
-  border-radius: 9px;
+  width: 64px;
+  height: 64px;
 }
 
 .instrument-page .artist-profile h1 {
@@ -202,10 +200,6 @@
 @media (max-width: 480px) {
   .artist-page-heading {
     gap: 8px;
-  }
-
-  .artist-page-heading .catalog-image {
-    width: 52px;
   }
 
   .artist-page-heading + .instrument-albums .detail-heading {
