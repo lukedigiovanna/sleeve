@@ -22,13 +22,15 @@ const albums = [
     title: "Zulu",
     sortTitle: "Alpha",
     releaseYear: 1950,
-    updatedAt: "2026-01-01",
+    createdAt: "2026-01-01",
+    updatedAt: "2026-04-01",
     listeningEntries: [{ listenedAt: "2026-02-01", rating: 3 }],
   },
   {
     title: "Bravo",
     sortTitle: null,
     releaseYear: 1960,
+    createdAt: "2026-02-01",
     updatedAt: "2026-02-01",
     listeningEntries: [
       { listenedAt: "2026-03-01", rating: 8 },
@@ -37,7 +39,7 @@ const albums = [
   },
 ];
 
-for (const category of ["recent", "updated", "title", "rating", "year"]) {
+for (const category of ["recent", "created", "title", "rating", "year"]) {
   test(`${category} sorts both ways using current values`, () => {
     assert.ok(
       compareLibraryAlbums(albums[0], albums[1], {

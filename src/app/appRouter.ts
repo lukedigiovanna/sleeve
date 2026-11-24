@@ -90,7 +90,7 @@ export class AppRouter {
   private readonly state: LibraryState = {
     query: "",
     filters: {},
-    sort: { category: "updated", direction: "descending" },
+    sort: { category: "created", direction: "descending" },
     layout: readLayout("library"),
   };
 

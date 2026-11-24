@@ -29,8 +29,10 @@ function sortValue(
   switch (category) {
     case "recent":
       return latest(album)?.listenedAt ?? null;
-    case "updated":
-      return album.updatedAt;
+    case "created": {
+      const createdAt = Date.parse(album.createdAt);
+      return Number.isFinite(createdAt) ? createdAt : null;
+    }
     case "title":
       return album.sortTitle || album.title;
     case "rating":

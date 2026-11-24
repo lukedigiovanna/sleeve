@@ -177,7 +177,7 @@ function renderArtistEmpty(hasItems: boolean): string {
 export function renderArtistDetail(
   item: Artist,
   albums: Album[],
-  layout = "grid",
+  layout = "list",
 ): string {
   const used = artistAlbums(albums, item.id).sort(
     (a, b) =>

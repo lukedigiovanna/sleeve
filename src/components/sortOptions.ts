@@ -28,7 +28,7 @@ const sortLabels = {
 
 const librarySortLabels = {
   recent: "Last logged",
-  updated: "Last updated",
+  created: "Date added",
   title: "Album title",
   rating: "Rating",
   year: "Release year",
