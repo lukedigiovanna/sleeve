@@ -13,7 +13,7 @@ const labels: Record<CategoryField, string> = {
   genres: "Genres",
   artists: "Artists",
   country: "Country",
-  instruments: "Instruments",
+  instruments: "Featured instruments",
 };
 
 function renderChoices(

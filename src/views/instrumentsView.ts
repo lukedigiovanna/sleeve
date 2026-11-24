@@ -193,14 +193,14 @@ export function renderInstrumentDetail(
       aria-labelledby="instrument-albums-title"
     >
       <div class="detail-heading">
-        <h2 id="instrument-albums-title">Albums using this instrument</h2>
+        <h2 id="instrument-albums-title">Albums featuring this instrument</h2>
         <span class="count-pill">${used.length}</span>
       </div>
       ${
         used.length
           ? renderAlbumGrid(used)
           : /* HTML */ `<div class="empty detail-empty">
-              <h3>Not used on any albums</h3>
+              <h3>No albums feature this instrument yet</h3>
               <p>
                 This instrument stays in your catalog until you add it to an
                 album or delete it.

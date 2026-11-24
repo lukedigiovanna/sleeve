@@ -82,21 +82,21 @@ function renderAdditionalCredits(additionalArtists: Album["artists"]): string {
   }`;
 }
 
-function renderInstrumentation(instruments: Album["instruments"]): string {
+function renderFeaturedInstruments(instruments: Album["instruments"]): string {
   return /* HTML */ ` <section aria-labelledby="instruments-title">
     <div class="detail-heading">
       ${icon("music", 21)}
-      <h2 id="instruments-title">Instrumentation</h2>
+      <h2 id="instruments-title">Featured instruments</h2>
       <button
         type="button"
         class="button section-edit"
         data-action="edit-instruments"
-        aria-label="Edit instruments"
+        aria-label="Edit featured instruments"
       >
         ${icon("edit", 14)} Edit
       </button>
     </div>
-    ${instruments.length ? /* HTML */ `<div class="tags">${instruments.map((item) => /* HTML */ `<a class="chip" href="${instrumentUrl(item.id)}">${escapeHtml(item.name)}</a>`).join("")}</div>` : /* HTML */ `<p class="muted">No instruments added yet. Add them whenever you know what you heard.</p>`}
+    ${instruments.length ? /* HTML */ `<div class="tags">${instruments.map((item) => /* HTML */ `<a class="chip" href="${instrumentUrl(item.id)}">${escapeHtml(item.name)}</a>`).join("")}</div>` : /* HTML */ `<p class="muted">No featured instruments added yet.</p>`}
   </section>`;
 }
 
@@ -281,7 +281,7 @@ export function renderAlbumDetailView(
       </div>
       <div class="album-sidebar">
         ${renderAdditionalCredits(additionalArtists)}
-        ${renderInstrumentation(album.instruments)}
+        ${renderFeaturedInstruments(album.instruments)}
         <section aria-labelledby="links-title">
           <div class="detail-heading">
             ${icon("link", 21)}
