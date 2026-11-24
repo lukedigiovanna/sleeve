@@ -171,7 +171,9 @@ export class InstrumentFeature {
 
     return /* HTML */ `<div class="instrument-picker">
       <label class="field" for="instrument-query"
-        ><span>Instruments <span class="muted">(optional)</span></span></label
+        ><span
+          >Featured instruments <span class="muted">(optional)</span></span
+        ></label
       >
       <div id="instrument-selected" class="tags" aria-live="polite"></div>
       ${renderSuggestions()}
@@ -277,7 +279,7 @@ export class InstrumentFeature {
       return;
 
     this.dependencies.dialog.show(
-      "Edit instruments",
+      "Edit featured instruments",
       /* HTML */ `<form id="instruments-form" data-id="${escapeHtml(album.id)}">
         <div class="dialog-body">
           <p class="dialog-intro">${escapeHtml(album.title)}</p>
@@ -287,7 +289,7 @@ export class InstrumentFeature {
           <button type="button" class="button secondary" data-action="close">
             Cancel</button
           ><button type="submit" class="button primary">
-            Save instruments
+            Save featured instruments
           </button>
         </div>
       </form>`,
@@ -488,7 +490,7 @@ export class InstrumentFeature {
       album.updatedAt = new Date().toISOString();
       this.dependencies.persistence.finishSave(
         album.id,
-        "Album instruments updated.",
+        "Featured instruments updated.",
       );
     }
   }

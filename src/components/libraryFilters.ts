@@ -31,7 +31,7 @@ const labels: Record<FilterField, string> = {
   genres: "Genre",
   artists: "Artist",
   country: "Country",
-  instruments: "Instrument",
+  instruments: "Featured instruments",
   vinylStatus: "Vinyl status",
 };
 
