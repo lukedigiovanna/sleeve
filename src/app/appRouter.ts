@@ -16,7 +16,6 @@ import {
 } from "../components/libraryCategoryFilters";
 import type { LibraryState } from "../views/libraryView";
 import { renderLibraryView, updateLibrary } from "../views/libraryView";
-import { renderActivityView } from "../views/activityView";
 import { renderAlbumDetailView } from "../views/albumDetailView";
 import { artistUrl, renderArtistDetail } from "../views/artistsView";
 import { renderGenreDetail } from "../views/genresView";
@@ -34,7 +33,7 @@ import { createLifecycle } from "./lifecycle";
 import { renderProfileView, type YearGrouping } from "../views/profileView";
 
 type RouteSection =
-  "profile" | "genres" | "artists" | "instruments" | "activity" | "library";
+  "profile" | "genres" | "artists" | "instruments" | "library";
 
 interface RouteItems {
   genre: Genre | undefined;
@@ -49,12 +48,14 @@ const listRouteLabels = new Map([
   ["#artists", "artists"],
   ["#genres", "genres"],
   ["#instruments", "instruments"],
-  ["#activity", "activity"],
 ]);
 
+export function isProfileRoute(hash: string): boolean {
+  return hash === "#profile" || hash === "#activity";
+}
+
 function routeSection(hash: string): RouteSection {
-  if (hash === "#profile") return "profile";
-  if (hash === "#activity") return "activity";
+  if (isProfileRoute(hash)) return "profile";
   if (hash === "#genres" || hash.startsWith("#genre/")) return "genres";
   if (hash === "#artists" || hash.startsWith("#artist/")) return "artists";
   if (hash === "#instruments" || hash.startsWith("#instrument/"))
@@ -145,8 +146,6 @@ export class AppRouter {
     if (hash === "#artists") this.dependencies.lists.artists(root);
     else if (hash === "#genres") this.dependencies.lists.genres(root);
     else if (hash === "#instruments") this.dependencies.lists.instruments(root);
-    else if (hash === "#activity")
-      root.innerHTML = renderActivityView(this.dependencies.library());
     else {
       const state =
         root === this.dependencies.main
@@ -186,7 +185,7 @@ export class AppRouter {
     const missing = location.hash.startsWith("#album/") && !album;
     if (section === "profile") {
       this.dependencies.main.innerHTML = renderProfileView(
-        this.dependencies.library().albums,
+        this.dependencies.library(),
         this.dependencies.accountEmail(),
         this.dependencies.accountId !== "demo",
         this.yearGrouping,
@@ -280,8 +279,7 @@ export class AppRouter {
 
   private routeLabel(hash: string): string {
     if (isLibraryRoute(hash)) return "library";
-    if (hash === "#profile") return "profile";
-    if (hash === "#activity") return "activity";
+    if (isProfileRoute(hash)) return "profile";
     const listLabel = listRouteLabels.get(hash);
     if (listLabel !== undefined) return listLabel;
 
@@ -317,8 +315,6 @@ export class AppRouter {
     switch (section) {
       case "profile":
         return "Profile — Sleeve";
-      case "activity":
-        return "Activity — Sleeve";
       case "genres":
         return `${items.genre?.name ?? "Genres"} — Sleeve`;
       case "artists":
@@ -355,6 +351,14 @@ export class AppRouter {
 
   public click(button: HTMLButtonElement): boolean {
     switch (button.dataset.action) {
+      case "open-profile-settings":
+        this.dependencies.main
+          .querySelector<HTMLDialogElement>("#profile-settings")
+          ?.showModal();
+        return true;
+      case "close-profile-settings":
+        button.closest("dialog")?.close();
+        return true;
       case "profile-grouping": {
         const grouping = button.dataset.grouping;
         if (grouping !== "decade" && grouping !== "year") return false;

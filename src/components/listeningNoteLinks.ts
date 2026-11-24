@@ -1,7 +1,7 @@
 import type { LibraryData } from "../types/library";
 import type { Album } from "../types/albums";
-import { artistText } from "./presentation";
-import { escapeHtml } from "./html";
+import { artistText } from "./presentation.ts";
+import { escapeHtml } from "./html.ts";
 
 const linkTypes = ["artist", "album", "instrument", "genre"] as const;
 type LinkType = (typeof linkTypes)[number];

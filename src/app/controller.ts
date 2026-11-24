@@ -58,6 +58,8 @@ export class AppController {
   private readonly library: LibraryStore;
   private readonly browsingActions = new Set([
     "profile-grouping",
+    "open-profile-settings",
+    "close-profile-settings",
     "profile-account",
     "discover",
     "discovery-open",

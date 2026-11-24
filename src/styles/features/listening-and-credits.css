@@ -182,15 +182,20 @@
 }
 
 .activity {
-  max-width: 48rem;
-  margin-inline: auto;
+  margin-top: 32px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+
+.activity > h2 {
+  font: 400 30px/1.2 var(--serif);
 }
 
 .activity-day {
   margin-top: 24px;
 }
 
-.activity-day h2 {
+.activity-day h3 {
   margin: 0 0 8px;
   font-size: 14px;
   color: var(--muted);

@@ -1,13 +1,13 @@
-import { escapeHtml } from "../components/html";
-import { formatListeningDate } from "../components/listeningDate";
+import { escapeHtml } from "../components/html.ts";
+import { formatListeningDate } from "../components/listeningDate.ts";
 import {
   listeningNoteTargets,
   noteLinkKey,
   renderListeningNote,
   type NoteLinkTarget,
-} from "../components/listeningNoteLinks";
-import { albumUrl, artistText, cover } from "../components/presentation";
-import { renderRating } from "../components/rating";
+} from "../components/listeningNoteLinks.ts";
+import { albumUrl, artistText, cover } from "../components/presentation.ts";
+import { renderRating } from "../components/rating.ts";
 import type { Album, ListeningEntry } from "../types/albums";
 import type { LibraryData } from "../types/library";
 
@@ -39,7 +39,7 @@ function renderEntry(
   </li>`;
 }
 
-export function renderActivityView(library: LibraryData): string {
+export function renderActivitySection(library: LibraryData): string {
   const entries = library.albums
     .flatMap((album) =>
       album.listeningEntries.map((listen) => ({ album, listen })),
@@ -64,19 +64,22 @@ export function renderActivityView(library: LibraryData): string {
     ]),
   );
 
-  return /* HTML */ `<section class="activity" aria-labelledby="page-title">
-    <div class="catalog-heading"><h1 id="page-title">Activity</h1></div>
+  return /* HTML */ `<section
+    class="activity"
+    aria-labelledby="activity-heading"
+  >
+    <h2 id="activity-heading">Activity</h2>
     ${
       days.size
         ? [...days]
             .map(
               ([date, day]) =>
                 /* HTML */ `<section class="activity-day">
-                  <h2>
+                  <h3>
                     <time datetime="${escapeHtml(date)}"
                       >${formatListeningDate(date)}</time
                     >
-                  </h2>
+                  </h3>
                   <ul class="activity-list">
                     ${day.map((entry) => renderEntry(entry, targets)).join("")}
                   </ul>

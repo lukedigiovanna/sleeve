@@ -25,6 +25,7 @@ test("themes switch immediately, style every page, and persist through refresh",
   ]);
 
   for (const [theme, background] of Object.entries(palettes)) {
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.locator("#theme-select").selectOption(theme);
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     await expect(page.locator("body")).toHaveCSS(
@@ -61,6 +62,7 @@ test("themes switch immediately, style every page, and persist through refresh",
       background,
     );
     await page.locator("#auth-demo").click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.locator("#theme-select")).toHaveValue(theme);
     await expect(page.locator("#page-title")).toHaveCSS(
       "font-family",
@@ -75,6 +77,8 @@ test("themes switch immediately, style every page, and persist through refresh",
       "outline-style",
       "solid",
     );
+
+    await page.getByRole("button", { name: "Close settings" }).click();
 
     for (const destination of ["artists", "genres", "instruments", ""]) {
       await page.evaluate((hash) => {
@@ -174,6 +178,7 @@ test("invalid stored themes and unavailable storage use a usable default", async
   await page.goto("/#profile");
   await page.locator("#auth-demo").click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "walnut");
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
   await page.locator("#theme-select").selectOption("prism");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "prism");
 });

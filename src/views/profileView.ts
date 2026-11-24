@@ -1,5 +1,7 @@
 import { currentTheme, themeOptions } from "../app/theme.ts";
 import { libraryUrl } from "../app/libraryUrl.ts";
+import { renderActivitySection } from "./activityView.ts";
+import type { LibraryData } from "../types/library";
 import type { Album } from "../types/albums";
 import { escapeHtml } from "../components/html.ts";
 import { icon } from "../components/icons.ts";
@@ -158,12 +160,12 @@ function renderChart(
 }
 
 export function renderProfileView(
-  albums: Album[],
+  library: LibraryData,
   email: string | undefined,
   authenticated: boolean,
   grouping: YearGrouping,
 ): string {
-  const stats = profileStatistics(albums, grouping);
+  const stats = profileStatistics(library.albums, grouping);
   const metrics = [
     ["Albums", stats.albums],
     ["Artists", stats.artists],
@@ -177,10 +179,20 @@ export function renderProfileView(
   return /* HTML */ `<div class="profile-page">
     <a class="back-link" href="#">${icon("back", 17)} Back to library</a>
     <header class="profile-heading">
-      <h1 id="page-title">Profile</h1>
-      <p id="profile-email">
-        ${escapeHtml(email ?? (authenticated ? "Your account" : "Demo library"))}
-      </p>
+      <div>
+        <h1 id="page-title">Profile</h1>
+        <p id="profile-email">
+          ${escapeHtml(email ?? (authenticated ? "Your account" : "Demo library"))}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="button secondary"
+        data-action="open-profile-settings"
+        aria-haspopup="dialog"
+      >
+        Settings
+      </button>
     </header>
     <dl class="profile-stats">
       ${metrics
@@ -234,42 +246,65 @@ export function renderProfileView(
         </p>
       </section>
     </div>
-    <section class="profile-account" aria-labelledby="appearance-heading">
-      <div>
-        <h2 id="appearance-heading">Appearance</h2>
-        <p>Choose a mood for Sleeve. Saved on this device.</p>
-      </div>
-      <label class="theme-picker">
-        <span>Theme</span>
-        <select id="theme-select" name="theme">
-          ${themeOptions()
-            .map(
-              ({ id, label }) =>
-                /* HTML */ `<option
-                  value="${id}"
-                  ${currentTheme() === id ? "selected" : ""}
-                >
-                  ${escapeHtml(label)}
-                </option>`,
-            )
-            .join("")}
-        </select>
-      </label>
-    </section>
-    <section class="profile-account" aria-labelledby="account-heading">
-      <div>
-        <h2 id="account-heading">Account</h2>
-        <p>
-          ${authenticated ? "Signed in to Sleeve" : "You’re exploring the demo library."}
-        </p>
-      </div>
+    ${renderActivitySection(library)} ${renderProfileSettings(authenticated)}
+  </div>`;
+}
+
+function renderProfileSettings(authenticated: boolean): string {
+  return /* HTML */ `<dialog
+    id="profile-settings"
+    aria-labelledby="profile-settings-title"
+  >
+    <div class="dialog-heading">
+      <h2 id="profile-settings-title">Settings</h2>
       <button
         type="button"
-        class="button secondary"
-        data-action="profile-account"
+        class="icon-button close"
+        data-action="close-profile-settings"
+        aria-label="Close settings"
+        autofocus
       >
-        ${authenticated ? "Sign out" : "Sign in"}
+        ${icon("close")}
       </button>
-    </section>
-  </div>`;
+    </div>
+    <div class="dialog-body">
+      <section class="profile-account" aria-labelledby="appearance-heading">
+        <div>
+          <h3 id="appearance-heading">Appearance</h3>
+          <p>Choose a mood for Sleeve. Saved on this device.</p>
+        </div>
+        <label class="theme-picker">
+          <span>Theme</span>
+          <select id="theme-select" name="theme">
+            ${themeOptions()
+              .map(
+                ({ id, label }) =>
+                  /* HTML */ `<option
+                    value="${id}"
+                    ${currentTheme() === id ? "selected" : ""}
+                  >
+                    ${escapeHtml(label)}
+                  </option>`,
+              )
+              .join("")}
+          </select>
+        </label>
+      </section>
+      <section class="profile-account" aria-labelledby="account-heading">
+        <div>
+          <h3 id="account-heading">Account</h3>
+          <p>
+            ${authenticated ? "Signed in to Sleeve" : "You’re exploring the demo library."}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="button secondary"
+          data-action="profile-account"
+        >
+          ${authenticated ? "Sign out" : "Sign in"}
+        </button>
+      </section>
+    </div>
+  </dialog>`;
 }
