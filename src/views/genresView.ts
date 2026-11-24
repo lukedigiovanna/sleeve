@@ -130,7 +130,7 @@ export function renderGenreDetail(
   genre: Genre,
   genres: Genre[],
   albums: Album[],
-  layout = "grid",
+  layout = "list",
 ): string {
   const used = albums
     .filter((album) => includesGenre(album, genre.id, genres))

@@ -5,9 +5,9 @@ const storageKey = (view: View) => `sleeve:layout:${view}`;
 
 export function readLayout(view: View): Layout {
   try {
-    return localStorage.getItem(storageKey(view)) === "list" ? "list" : "grid";
+    return localStorage.getItem(storageKey(view)) === "grid" ? "grid" : "list";
   } catch {
-    return "grid";
+    return "list";
   }
 }
 
