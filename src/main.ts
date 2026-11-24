@@ -1,3 +1,4 @@
+import { isProfileRoute } from "./app/appRouter";
 import { updateThemeColor } from "./app/theme";
 import "./styles/main.css";
 import {
@@ -70,7 +71,7 @@ function enterLibrary(
   };
   const account = document.createElement("a");
   account.href = "#profile";
-  if (location.hash === "#profile")
+  if (isProfileRoute(location.hash))
     account.setAttribute("aria-current", "page");
   account.className = "auth-text-button account-button";
   account.innerHTML = /* HTML */ `<svg

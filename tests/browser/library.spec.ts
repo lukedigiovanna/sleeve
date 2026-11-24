@@ -1419,13 +1419,7 @@ test("route previews match live lists and remounting handles each save once", as
     document.querySelector("#app")!.innerHTML = renderApp();
     const first = initializeApp();
     const results = [];
-    for (const hash of [
-      "#artists",
-      "#genres",
-      "#instruments",
-      "#activity",
-      "#",
-    ]) {
+    for (const hash of ["#artists", "#genres", "#instruments", "#"]) {
       const changed = new Promise<void>((resolve) =>
         window.addEventListener("hashchange", () => resolve(), { once: true }),
       );

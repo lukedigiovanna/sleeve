@@ -62,7 +62,20 @@ test("profile charts, grouping, and return navigation", async ({ page }) => {
   await expect(page.locator("#library-query")).toHaveValue("a");
   await page.goForward();
   await expect(page.locator("#page-title")).toHaveText("Profile");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  const settings = page.getByRole("button", { name: "Settings", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(dialog).toBeHidden();
+  await settings.click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(settings).toBeFocused();
+  await settings.click();
+  await dialog.getByRole("button", { name: "Close settings" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(settings).toBeFocused();
+  await settings.click();
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("#auth-email")).toBeVisible();
 });
 
@@ -153,4 +166,21 @@ test("histogram links replace filters and survive refresh and history navigation
   const label = (await year.getAttribute("aria-label"))!;
   await year.click();
   await expect(page).toHaveURL(new RegExp(`year=${label.slice(0, 4)}$`));
+});
+
+test("old activity links open the profile activity section", async ({
+  page,
+}) => {
+  await page.goto("/#activity");
+  await page.locator("#auth-demo").click();
+  await expect(
+    page.getByRole("heading", { name: "Profile", level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Activity", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".account-button")).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 });

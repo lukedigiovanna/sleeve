@@ -63,7 +63,7 @@ export function renderHeader(): string {
           <a href="#" data-nav="library">Library</a
           ><a href="#artists" data-nav="artists">Artists</a
           ><a href="#genres" data-nav="genres">Genres</a
-          ><a href="#activity" data-nav="activity">Activity</a>
+          ><a href="#instruments" data-nav="instruments">Instruments</a>
         </nav>
         <button
           type="button"

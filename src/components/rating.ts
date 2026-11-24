@@ -1,6 +1,6 @@
-import { escapeHtml } from "./html";
-import { starPath } from "./icons";
-import { displayRating } from "./presentation";
+import { escapeHtml } from "./html.ts";
+import { starPath } from "./icons.ts";
+import { displayRating } from "./presentation.ts";
 
 const starMask = `url("data:image/svg+xml,${encodeURIComponent(
   /* HTML */ `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

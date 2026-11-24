@@ -71,11 +71,7 @@ test("catalog routes retain titles, navigation sections, and history labels", as
     ["genres", "genre"],
     ["instruments", "instrument"],
   ]) {
-    if (section === "instruments")
-      await page.evaluate(() => {
-        location.hash = "#instruments";
-      });
-    else await page.locator('[data-nav="' + section + '"]').click();
+    await page.locator('[data-nav="' + section + '"]').click();
     await expect(page.locator("#page-title")).toHaveText(
       section[0].toUpperCase() + section.slice(1),
     );
@@ -87,13 +83,10 @@ test("catalog routes retain titles, navigation sections, and history labels", as
     const name = await page.locator("#page-title").innerText();
     const hash = new URL(page.url()).hash;
     await expect(page).toHaveTitle(name + " — Sleeve");
-    if (section === "instruments") {
-      await expect(page.locator(".main-nav [aria-current]")).toHaveCount(0);
-    } else {
-      await expect(
-        page.locator('[data-nav="' + section + '"]'),
-      ).toHaveAttribute("aria-current", "page");
-    }
+    await expect(page.locator('[data-nav="' + section + '"]')).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
 
     await page.evaluate(() => {
       location.hash = "#album/unavailable";
@@ -115,13 +108,10 @@ test("catalog routes retain titles, navigation sections, and history labels", as
       location.hash = "#" + prefix + "/unavailable";
     }, prefix);
     await expect(page).toHaveTitle(title + " — Sleeve");
-    if (section === "instruments") {
-      await expect(page.locator(".main-nav [aria-current]")).toHaveCount(0);
-    } else {
-      await expect(
-        page.locator('[data-nav="' + section + '"]'),
-      ).toHaveAttribute("aria-current", "page");
-    }
+    await expect(page.locator('[data-nav="' + section + '"]')).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     if (prefix !== "genre")
       await expect(page.locator("main [data-route-back]")).toHaveText(
         "Back to previous page",
@@ -134,10 +124,17 @@ test("Activity shows listens by date and opens albums with a return link", async
 }) => {
   await page.goto("/");
   await page.locator("#auth-demo").click();
-  const tab = page.getByRole("link", { name: "Activity", exact: true });
+  const tab = page.getByRole("link", { name: "Profile", exact: true });
   await tab.click();
   await expect(tab).toHaveAttribute("aria-current", "page");
-  await expect(page).toHaveTitle("Activity — Sleeve");
+  await expect(page).toHaveTitle("Profile — Sleeve");
+  const activity = page.getByRole("region", { name: "Activity", exact: true });
+  await expect(activity).toBeVisible();
+  expect(
+    await activity.evaluate((section) =>
+      section.previousElementSibling?.classList.contains("profile-charts"),
+    ),
+  ).toBe(true);
 
   const dates = await page
     .locator(".activity-day time")
@@ -156,11 +153,12 @@ test("Activity shows listens by date and opens albums with a return link", async
   await expect(entry.locator(".listen-notes")).not.toBeEmpty();
   const album = entry.locator(".activity-album");
   const title = await album.innerText();
+  await entry.locator(".cover").scrollIntoViewIfNeeded();
   const artwork = await entry.locator(".cover").boundingBox();
   const metadata = await entry.locator(".activity-entry-content").boundingBox();
   expect(artwork!.height).toBe(metadata!.height);
   await page.mouse.click(artwork!.x + artwork!.width / 2, artwork!.y + 10);
   await expect(page.locator("#page-title")).toHaveText(title);
-  await page.getByRole("link", { name: "Back to activity" }).click();
+  await page.getByRole("link", { name: "Back to profile" }).click();
   await expect(tab).toHaveAttribute("aria-current", "page");
 });
