@@ -1727,6 +1727,9 @@ test("route previews match live lists and remounting handles each save once", as
       live
         .querySelectorAll("[id]")
         .forEach((element) => element.removeAttribute("id"));
+      live
+        .querySelectorAll<HTMLImageElement>('img[loading="eager"]')
+        .forEach((image) => (image.loading = "lazy"));
       results.push({
         hash,
         same: preview.innerHTML === live.innerHTML,
@@ -2386,4 +2389,254 @@ test("artist links survive drafts and can be edited and removed", async ({
   await save.click();
   await expect(links).toHaveCount(0);
   await expect(divider).toHaveCount(0);
+});
+
+test("mobile tab swipes track the first movement and keep the destination artwork", async ({
+  page,
+  browserName,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile" || browserName !== "chromium",
+    "Uses Chromium touch input",
+  );
+
+  const touch = await page.context().newCDPSession(page);
+  const send = async (
+    type: "touchStart" | "touchMove" | "touchEnd",
+    x = 0,
+    y = 0,
+    timestamp?: number,
+  ) => {
+    await touch.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: type === "touchEnd" ? [] : [{ x, y }],
+      timestamp,
+    });
+  };
+  const main = page.locator("main");
+  const divider = page.locator(".main-nav-divider");
+
+  await send("touchStart", 320, 420);
+  await send("touchMove", 318, 420);
+  await expect(main).toHaveCSS("transform", "matrix(1, 0, 0, 1, -2, 0)");
+  await expect(page.locator(".swipe-preview:visible")).toHaveAttribute(
+    "aria-hidden",
+    "true",
+  );
+  await send("touchEnd");
+  await expect(main).toHaveCSS("transform", "none");
+  await expect(page.locator('[data-nav="library"]')).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+
+  await send("touchStart", 320, 420);
+  await send("touchMove", 320, 390);
+  await send("touchMove", 320, 290);
+  await send("touchEnd");
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  await expect(main).toHaveCSS("transform", "none");
+
+  const half = page.viewportSize()!.width / 2;
+  const time = Date.now() / 1000;
+  await send("touchStart", 320, 420, time - 0.4);
+  const shortDrag = Math.floor(half) - 1;
+  await send("touchMove", 320 - shortDrag, 420, time - 0.2);
+  await expect(divider).toHaveCSS("transition-duration", "0s");
+  const dividerOffset = await divider.evaluate((element) => {
+    const tab = document.querySelector<HTMLElement>('[data-nav="artists"]')!;
+    return parseFloat(getComputedStyle(element).left) / tab.offsetLeft;
+  });
+  expect(dividerOffset).toBeCloseTo(shortDrag / (half * 2), 2);
+  await send("touchEnd", 0, 0, time);
+  await expect(main).toHaveCSS("transform", "none");
+  await expect(divider).toHaveCSS("left", "0px");
+  await expect(page.locator('[data-nav="library"]')).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+
+  await send("touchStart", 320, 420);
+  await send("touchMove", 320 - Math.ceil(half), 420);
+  await send("touchEnd");
+  await expect(page).toHaveURL(/#artists$/);
+  await expect(main).toHaveCSS("transform", "none");
+  await expect(page.locator(".swipe-preview:visible")).toHaveCount(0);
+
+  await send("touchStart", 80, 420);
+  await send("touchMove", 80 + Math.ceil(half), 420);
+  await expect(
+    page.locator('.swipe-preview:visible .cover img[loading="lazy"]'),
+  ).toHaveCount(0);
+  const image = await page
+    .locator(".swipe-preview:visible .cover img")
+    .first()
+    .elementHandle();
+  await image.evaluate((element) => element.decode());
+  const previewTop = await image.evaluate(
+    (element) => element.getBoundingClientRect().top,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
+    half * 2,
+  );
+  await send("touchEnd");
+  await expect(page.locator("#library-query")).toBeVisible();
+  expect(
+    await image.evaluate((element) => element.closest("main") !== null),
+  ).toBe(true);
+  expect(
+    await image.evaluate((element) => element.getBoundingClientRect().top),
+  ).toBeCloseTo(previewTop, 0);
+  await expect(main).toHaveCSS("transform", "none");
+  await expect(page.locator(".swipe-preview:visible")).toHaveCount(0);
+});
+
+test("mobile tab taps reuse all four panels and restore library scroll", async ({
+  page,
+}, testInfo) => {
+  test.skip(!testInfo.project.use.isMobile, "Mobile tab panels");
+
+  const tabs = ["library", "artists", "genres", "instruments"];
+  const handles = [];
+  for (const tab of tabs) {
+    await page.locator(`[data-nav="${tab}"]`).tap();
+    await expect(page.locator(`[data-nav="${tab}"]`)).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    handles.push(await page.locator("main #page-title").elementHandle());
+  }
+
+  await expect(page.locator(".main-nav-divider")).toHaveCSS(
+    "transition-duration",
+    "0.3s, 0.3s",
+  );
+
+  for (const [index, tab] of tabs.entries()) {
+    await page.locator(`[data-nav="${tab}"]`).tap();
+    await expect(page.locator(`[data-nav="${tab}"]`)).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      await handles[index].evaluate(
+        (heading) => heading === document.querySelector("main #page-title"),
+      ),
+    ).toBe(true);
+    for (const [other, handle] of handles.entries()) {
+      if (other !== index) {
+        expect(
+          await handle.evaluate(
+            (heading) => heading.isConnected && !heading.closest("main"),
+          ),
+        ).toBe(true);
+      }
+    }
+  }
+
+  await page.locator('[data-nav="library"]').tap();
+  const search = page.locator("#library-query");
+  await expect(search).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 120));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
+  await page.locator('[data-nav="genres"]').evaluate((tab) => tab.click());
+  await expect(page.locator('[data-nav="genres"]')).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await page.locator('[data-nav="library"]').tap();
+  await expect(search).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(120);
+
+  await search.fill("Miles");
+  await page.locator('[data-nav="artists"]').tap();
+  await expect(page.locator('[data-nav="artists"]')).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await page.locator('[data-nav="library"]').tap();
+  await expect(search).toHaveValue("Miles");
+});
+
+test("mobile tab swipe release speed changes the settling time", async ({
+  page,
+  browserName,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile" || browserName !== "chromium",
+    "Uses Chromium touch input",
+  );
+
+  const touch = await page.context().newCDPSession(page);
+  async function swipe(slow: boolean) {
+    const time = Date.now() / 1000;
+    const steps = [
+      { type: "touchStart" as const, x: 320, time: time - 0.18 },
+      { type: "touchMove" as const, x: slow ? 130 : 280, time: time - 0.07 },
+      { type: "touchMove" as const, x: 100, time: time - 0.01 },
+      { type: "touchEnd" as const, x: 0, time },
+    ];
+    for (const step of steps) {
+      await touch.send("Input.dispatchTouchEvent", {
+        type: step.type,
+        touchPoints: step.type === "touchEnd" ? [] : [{ x: step.x, y: 420 }],
+        timestamp: step.time,
+      });
+    }
+
+    const motion = await page.locator("main").evaluate((main) => {
+      const divider = document.querySelector<HTMLElement>(".main-nav-divider")!;
+      return {
+        panels: main.style.transitionDuration,
+        divider: divider.style.transitionDuration,
+      };
+    });
+    expect(motion.panels).toBe(motion.divider);
+    await expect(page).toHaveURL(/#artists$/);
+    await page.locator('[data-nav="library"]').tap();
+    return parseFloat(motion.panels);
+  }
+
+  const slow = await swipe(true);
+  const fast = await swipe(false);
+  expect(fast).toBeLessThan(slow);
+});
+
+test("short flicks switch mobile tabs in either direction", async ({
+  page,
+  browserName,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile" || browserName !== "chromium",
+    "Uses Chromium touch input",
+  );
+
+  const touch = await page.context().newCDPSession(page);
+  for (const [from, to, tab] of [
+    [270, 210, "artists"],
+    [120, 180, "library"],
+  ] as const) {
+    const time = Date.now() / 1000;
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: from, y: 420 }],
+      timestamp: time - 0.04,
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: to, y: 420 }],
+      timestamp: time - 0.01,
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+      timestamp: time,
+    });
+    await expect(page.locator(`[data-nav="${tab}"]`)).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  }
 });

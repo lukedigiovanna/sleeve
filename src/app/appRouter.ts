@@ -29,6 +29,7 @@ import { instrumentUrl } from "./instruments";
 import { readLayout, saveLayout } from "./layoutPreferences";
 import { createRouteHistory } from "./routeHistory";
 import { createLifecycle } from "./lifecycle";
+import { MobileTabPanels } from "./mobileTabPanels";
 
 import { renderProfileView, type YearGrouping } from "../views/profileView";
 
@@ -68,6 +69,7 @@ export interface AppRouterDependencies {
   accountEmail: () => string | undefined;
   main: HTMLElement;
   library: () => LibraryData;
+  libraryRevision: () => number;
   lists: {
     artists: (root: HTMLElement) => void;
     genres: (root: HTMLElement) => void;
@@ -86,6 +88,9 @@ export class AppRouter {
     artist: readLayout("artist"),
     genre: readLayout("genre"),
   };
+  private readonly tabs: MobileTabPanels;
+  private renderedHash = location.hash;
+  private renderedRevision: number;
   private yearGrouping: YearGrouping = "decade";
   private readonly state: LibraryState = {
     query: "",
@@ -96,6 +101,13 @@ export class AppRouter {
 
   constructor(dependencies: AppRouterDependencies) {
     this.dependencies = dependencies;
+    this.tabs = new MobileTabPanels((hash, root) =>
+      this.renderListRoute(hash, root),
+    );
+    this.renderedRevision = dependencies.libraryRevision();
+    this.lifecycle.listen(this.tabs.media).addEventListener("change", () => {
+      this.tabs.resize(this.renderedHash);
+    });
     this.routeHistory = createRouteHistory(dependencies.accountId);
     history.scrollRestoration = "manual";
     this.lifecycle
@@ -105,9 +117,20 @@ export class AppRouter {
     this.listen();
   }
 
-  public arrive(): number {
+  public navigate(): void {
+    const hash = location.hash;
+    const mobile = this.tabs.media.matches;
+    const dataChanged = this.syncTabData();
+    if (mobile && this.renderedHash !== hash) {
+      this.tabs.saveScroll(this.renderedHash, window.scrollY);
+      if (!dataChanged)
+        this.tabs.leave(this.renderedHash, this.dependencies.main);
+    }
     this.readLibraryUrl();
-    return this.routeHistory.arrive();
+    const scroll = this.routeHistory.arrive(
+      mobile ? this.tabs.scrollFor(hash) : 0,
+    );
+    this.renderRoute(true, mobile && this.tabs.supports(hash), scroll);
   }
 
   private readLibraryUrl(): void {
@@ -123,6 +146,8 @@ export class AppRouter {
     if (hash === location.hash) return;
     history.replaceState(history.state, "", hash);
     this.routeHistory.replace();
+    this.renderedHash = location.hash;
+    this.tabs.rememberLibrary(location.hash);
     this.dependencies.onUrlChanged();
   }
 
@@ -161,16 +186,34 @@ export class AppRouter {
     }
   }
 
+  private syncTabData(): boolean {
+    const revision = this.dependencies.libraryRevision();
+    if (revision === this.renderedRevision) return false;
+
+    this.renderedRevision = revision;
+    this.tabs.invalidate();
+    return true;
+  }
+
   public render(focus = false): void {
-    const genre = this.dependencies
-      .library()
-      .genres.find((g) => genreUrl(g.id) === location.hash);
-    const album = this.activeAlbum();
-    const artist = this.dependencies
-      .library()
-      .artists.find((item) => artistUrl(item.id) === location.hash);
-    const instrument = this.activeInstrument();
-    const section = routeSection(location.hash);
+    this.syncTabData();
+    this.renderRoute(focus, false);
+  }
+
+  private renderRoute(focus: boolean, useCachedTab: boolean, scroll = 0): void {
+    const hash = location.hash;
+    const library = this.dependencies.library();
+    const genre = hash.startsWith("#genre/")
+      ? library.genres.find((item) => genreUrl(item.id) === hash)
+      : undefined;
+    const artist = hash.startsWith("#artist/")
+      ? library.artists.find((item) => artistUrl(item.id) === hash)
+      : undefined;
+    const album = hash.startsWith("#album/") ? this.activeAlbum() : undefined;
+    const instrument = hash.startsWith("#instrument/")
+      ? this.activeInstrument()
+      : undefined;
+    const section = routeSection(hash);
 
     for (const link of document.querySelectorAll<HTMLElement>("[data-nav]")) {
       if (link.dataset.nav === section)
@@ -183,7 +226,9 @@ export class AppRouter {
     else profileLink?.removeAttribute("aria-current");
 
     const missing = location.hash.startsWith("#album/") && !album;
-    if (section === "profile") {
+    if (useCachedTab) {
+      this.tabs.show(location.hash, this.dependencies.main);
+    } else if (section === "profile") {
       this.dependencies.main.innerHTML = renderProfileView(
         this.dependencies.library(),
         this.dependencies.accountEmail(),
@@ -268,9 +313,12 @@ export class AppRouter {
       instrument,
       album,
     });
+    this.renderedHash = location.hash;
+    this.tabs.rememberLibrary(this.renderedHash);
     this.dependencies.onRendered();
+    this.tabs.warm(this.renderedHash);
     if (focus) {
-      window.scrollTo(0, 0);
+      window.scrollTo(0, scroll);
       const heading = document.querySelector<HTMLElement>("#page-title");
       heading?.setAttribute("tabindex", "-1");
       heading?.focus({ preventScroll: true });
@@ -328,16 +376,19 @@ export class AppRouter {
   }
 
   public renderPreview(hash: string): HTMLElement {
-    const page = document.createElement("div");
-    page.className = "frame swipe-preview";
-    this.renderListRoute(hash, page);
-    // Preview content is visual only; avoid duplicate IDs and interactive controls.
-    page.inert = true;
-    page.setAttribute("aria-hidden", "true");
-    page
-      .querySelectorAll("[id]")
-      .forEach((element) => element.removeAttribute("id"));
-    return page;
+    return this.tabs.renderPreview(hash);
+  }
+
+  public prepareTab(hash: string): HTMLElement {
+    return this.tabs.prepare(hash);
+  }
+
+  public restoreTabPreview(hash: string, element: HTMLElement): void {
+    this.tabs.restorePreview(hash, element);
+  }
+
+  public tabScroll(hash: string): number {
+    return this.tabs.scrollFor(hash);
   }
 
   public updateCatalogFilters(focusId: string): void {
@@ -516,6 +567,32 @@ export class AppRouter {
     );
   }
 
+  private switchMobileTab(event: MouseEvent): void {
+    if (
+      !this.tabs.media.matches ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+
+    const link = (event.target as Element).closest<HTMLAnchorElement>(
+      ".main-nav a[data-nav]",
+    );
+    if (!link || link.hash === location.hash) return;
+
+    event.preventDefault();
+    const oldURL = location.href;
+    history.pushState(null, "", link.href);
+    // Run the shared route handoff before the next tap can target the old panel.
+    window.dispatchEvent(
+      new HashChangeEvent("hashchange", { oldURL, newURL: location.href }),
+    );
+  }
+
   private listen(): void {
     this.lifecycle.listen(document).addEventListener("click", (event) => {
       if (event.target instanceof HTMLInputElement)
@@ -539,6 +616,7 @@ export class AppRouter {
       )) {
         if (!event.composedPath().includes(dropdown)) dropdown.open = false;
       }
+      this.switchMobileTab(event);
     });
     this.lifecycle.listen(document).addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
@@ -553,6 +631,7 @@ export class AppRouter {
 
   public dispose(): void {
     this.lifecycle.dispose();
+    this.tabs.invalidate();
     history.scrollRestoration = this.originalScrollRestoration;
   }
 }

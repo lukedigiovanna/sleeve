@@ -1,11 +1,26 @@
 import { createLifecycle } from "../app/lifecycle";
 import { renderBrandLogo } from "./brandLogo";
-export function initializeHeader(): () => void {
-  const lifecycle = createLifecycle();
-  const header = document.querySelector<HTMLElement>(".masthead");
-  if (!header) return () => lifecycle.dispose();
+export interface SwipeMotion {
+  duration: number;
+  easing: string;
+}
 
-  const disposeDivider = initializeDivider(header);
+export interface TabIndicator {
+  followSwipe(position: number, motion?: SwipeMotion): void;
+  resetSwipe(): void;
+}
+
+interface Header {
+  indicator: TabIndicator;
+  dispose(): void;
+}
+
+export function initializeHeader(): Header {
+  const lifecycle = createLifecycle();
+  const header = document.querySelector<HTMLElement>(".masthead")!;
+  const divider = new NavDivider(
+    header.querySelector<HTMLElement>(".main-nav")!,
+  );
   const mobile = window.matchMedia("(max-width: 700px)");
   let lastY = window.scrollY;
   let travel = 0;
@@ -48,41 +63,92 @@ export function initializeHeader(): () => void {
   lifecycle.listen(header).addEventListener("focusin", showHeader);
   lifecycle.listen(window).addEventListener("hashchange", showHeader);
   lifecycle.listen(mobile).addEventListener("change", showHeader);
-  return () => {
-    disposeDivider();
-    lifecycle.dispose();
+  return {
+    indicator: divider,
+    dispose() {
+      divider.dispose();
+      lifecycle.dispose();
+    },
   };
 }
 
-function initializeDivider(header: HTMLElement): () => void {
-  const nav = header.querySelector<HTMLElement>(".main-nav")!;
-  const divider = nav.querySelector<HTMLElement>(".main-nav-divider")!;
+interface TabBounds {
+  left: number;
+  width: number;
+}
 
-  function updateDivider(): void {
-    const tab = nav.querySelector<HTMLElement>('[aria-current="page"]');
-    divider.hidden = !tab;
-    if (!tab) return;
+class NavDivider implements TabIndicator {
+  private readonly nav: HTMLElement;
+  private readonly divider: HTMLElement;
+  private readonly links: HTMLAnchorElement[];
+  private readonly selection = new MutationObserver(() =>
+    this.updateSelection(),
+  );
+  private readonly layout = new ResizeObserver(() => this.measure());
+  private bounds: TabBounds[] = [];
+  private swipePosition: number | undefined;
 
-    const bounds = tab.getBoundingClientRect();
-    divider.style.left = `${bounds.left - nav.getBoundingClientRect().left}px`;
-    divider.style.width = `${bounds.width}px`;
+  constructor(nav: HTMLElement) {
+    this.nav = nav;
+    this.divider = nav.querySelector<HTMLElement>(".main-nav-divider")!;
+    this.links = [...nav.querySelectorAll<HTMLAnchorElement>("[data-nav]")];
+    this.selection.observe(nav, {
+      attributes: true,
+      attributeFilter: ["aria-current"],
+      subtree: true,
+    });
+    this.layout.observe(nav);
+    for (const link of this.links) this.layout.observe(link);
+    this.measure();
   }
 
-  const selection = new MutationObserver(updateDivider);
-  selection.observe(nav, {
-    attributes: true,
-    attributeFilter: ["aria-current"],
-    subtree: true,
-  });
-  const layout = new ResizeObserver(updateDivider);
-  layout.observe(nav);
-  for (const tab of nav.querySelectorAll("a")) layout.observe(tab);
-  updateDivider();
+  private measure(): void {
+    const origin = this.nav.getBoundingClientRect().left;
+    this.bounds = this.links.map((link) => {
+      const bounds = link.getBoundingClientRect();
+      return { left: bounds.left - origin, width: bounds.width };
+    });
+    if (this.swipePosition === undefined) this.updateSelection();
+    else this.draw(this.swipePosition);
+  }
 
-  return () => {
-    selection.disconnect();
-    layout.disconnect();
-  };
+  private updateSelection(): void {
+    if (this.swipePosition !== undefined) return;
+
+    const index = this.links.findIndex(
+      (link) => link.getAttribute("aria-current") === "page",
+    );
+    this.divider.hidden = index < 0;
+    if (index >= 0) this.draw(index);
+  }
+
+  private draw(position: number): void {
+    const index = Math.floor(position);
+    const fraction = position - index;
+    const from = this.bounds[index];
+    const to = this.bounds[index + 1] ?? from;
+    this.divider.style.left = `${from.left + (to.left - from.left) * fraction}px`;
+    this.divider.style.width = `${from.width + (to.width - from.width) * fraction}px`;
+  }
+
+  public followSwipe(position: number, motion?: SwipeMotion): void {
+    this.swipePosition = position;
+    this.divider.style.transitionDuration = `${motion?.duration ?? 0}ms`;
+    this.divider.style.transitionTimingFunction = motion?.easing ?? "";
+    this.draw(position);
+  }
+
+  public resetSwipe(): void {
+    this.swipePosition = undefined;
+    this.divider.style.transitionDuration = "";
+    this.divider.style.transitionTimingFunction = "";
+    this.updateSelection();
+  }
+
+  public dispose(): void {
+    this.selection.disconnect();
+    this.layout.disconnect();
+  }
 }
 
 export function renderHeader(): string {

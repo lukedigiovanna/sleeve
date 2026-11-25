@@ -54,20 +54,23 @@ function enterLibrary(
   teardownAuthView();
   libraryMounted = true;
   root!.innerHTML = renderApp(authenticated);
-  const renderNavigationPage = initializeApp(
+  const app = initializeApp(
     data,
     authenticated ? accountId! : "demo",
     cached,
     () => accountEmail,
   );
-  const disposeHeader = initializeHeader();
-  const disposeNavigation = initializeNavigation((hash) =>
-    renderNavigationPage.renderPreview(hash),
-  );
+  const header = initializeHeader();
+  const disposeNavigation = initializeNavigation({
+    indicator: header.indicator,
+    prepareTab: (hash) => app.prepareTab(hash),
+    restoreTab: (hash, page) => app.restoreTabPreview(hash, page),
+    tabScroll: (hash) => app.tabScroll(hash),
+  });
   disposeLibrary = () => {
-    renderNavigationPage.dispose();
+    app.dispose();
     disposeNavigation();
-    disposeHeader();
+    header.dispose();
     libraryMounted = false;
   };
   const account = document.createElement("a");
