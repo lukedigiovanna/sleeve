@@ -44,7 +44,11 @@ test("themes switch immediately, style every page, and persist through refresh",
           return `rgb(${[0, 2, 4].map((i) => parseInt(color.slice(i, i + 2), 16)).join(", ")})`;
         }),
     );
-    for (const selector of [".masthead", ".button.primary", ".chart-bar"]) {
+    await expect(page.locator(".masthead")).toHaveCSS(
+      "background-image",
+      "none",
+    );
+    for (const selector of [".button.primary", ".chart-bar"]) {
       await expect(page.locator(selector).first()).toHaveCSS(
         "background-image",
         theme === "prism" ? /linear-gradient/ : "none",
@@ -101,7 +105,7 @@ test("themes switch immediately, style every page, and persist through refresh",
         .click();
       await expect(page.locator(".album-list .album-card").first()).toHaveCSS(
         "background-color",
-        "rgb(237, 206, 156)",
+        "rgba(0, 0, 0, 0)",
       );
       await page.screenshot({
         path: `test-results/theme-soul-list-${test.info().project.name}.png`,

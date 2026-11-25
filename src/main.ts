@@ -76,10 +76,7 @@ function enterLibrary(
     account.setAttribute("aria-current", "page");
   account.className = "account-button";
   account.setAttribute("aria-label", "Profile");
-  account.innerHTML = /* HTML */ `
-    <span class="profile-slot-label" aria-hidden="true">Profile</span>
-    <span class="profile-avatar" aria-hidden="true"> ${icon("person")} </span>
-  `;
+  account.innerHTML = icon("person", 26);
   document.querySelector(".masthead-inner")!.append(account);
 
   const handleAccount = async (event: MouseEvent): Promise<void> => {

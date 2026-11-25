@@ -7,6 +7,7 @@ export function renderLayoutToggle(
 ): string {
   return /* HTML */ `<div
     class="layout-toggle"
+    role="group"
     aria-label="${escapeHtml(label)}"
   >
     <button

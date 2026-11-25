@@ -20,7 +20,6 @@
   }
   .masthead-inner {
     min-height: 61px;
-    gap: 13px;
   }
   .brand {
     font-size: 24px;
@@ -44,18 +43,6 @@
   .album-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 13px 9px;
-  }
-  .album-list .album-card {
-    grid-template-columns: 43px minmax(0, 1fr) 112px;
-    gap: 8px;
-    min-height: 58px;
-  }
-  .album-list .album-genre,
-  .album-list .card-arrow {
-    display: none;
-  }
-  .album-list .rating {
-    gap: 5px;
   }
   .detail {
     padding-top: 20px;
@@ -158,15 +145,25 @@
     min-width: 31px;
   }
 }
-@media (max-width: 360px) {
-  .masthead-inner {
-    gap: 8px;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition-duration: 0.001s !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .album-list .album-card {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 66px;
+  }
+  .album-list .album-genre,
+  .album-list .card-arrow {
+    display: none;
+  }
+  .album-list .rating {
+    gap: 5px;
   }
 }

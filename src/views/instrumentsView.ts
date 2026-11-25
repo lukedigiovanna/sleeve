@@ -1,3 +1,4 @@
+import { renderResultsMeta } from "../components/resultsMeta";
 import { compareSortValues, type SortSelection } from "../app/librarySort";
 import {
   matchesInstrumentCategory,
@@ -94,7 +95,7 @@ export function renderInstrumentsView(
     <div id="instrument-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data, "instrument")}
     </div>
-    <p id="instruments-count" class="result-count" role="status"></p>
+    ${renderResultsMeta("instruments")}
     <div id="instruments-list"></div>
   </section>`;
 }
@@ -137,7 +138,9 @@ export function updateInstrumentsView(
   root.querySelector("#instruments-count")!.textContent =
     `${results.length} ${results.length === 1 ? "instrument" : "instruments"}`;
   root.querySelector("#instruments-list")!.innerHTML = results.length
-    ? /* HTML */ `<ul class="catalog-row-list instrument-catalog-list">
+    ? /* HTML */ `<ul
+        class="divided-rows catalog-row-list instrument-catalog-list"
+      >
         ${results.map(({ item, count }) => renderInstrumentRow(item, count)).join("")}
       </ul>`
     : renderInstrumentEmpty(Boolean(instruments.length));

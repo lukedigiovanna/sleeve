@@ -1,6 +1,5 @@
 import { isLibraryRoute } from "./libraryUrl";
 import { createLifecycle } from "./lifecycle";
-/** Keep the moving highlight and touch navigation in the same order as the links. */
 export function initializeNavigation(
   renderPage: (hash: string) => HTMLElement,
 ): () => void {
@@ -8,69 +7,8 @@ export function initializeNavigation(
   const nav = document.querySelector<HTMLElement>(".main-nav")!;
   const main = document.querySelector<HTMLElement>("main")!;
   const links = [...nav.querySelectorAll<HTMLAnchorElement>("[data-nav]")];
-  const highlight = document.createElement("span");
-  highlight.className = "nav-highlight";
-  highlight.setAttribute("aria-hidden", "true");
-  nav.prepend(highlight);
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const mobile = window.matchMedia("(max-width: 700px)");
-  let animation: Animation | undefined;
-  let initialized = false;
-  let active: HTMLAnchorElement | undefined;
-
-  function updateHighlight(animate = true) {
-    const next = links.find((link) => link.hasAttribute("aria-current"));
-    highlight.hidden = !next;
-    if (!next) return;
-    const previous = highlight.getBoundingClientRect();
-    const bounds = next.getBoundingClientRect();
-    animation?.cancel();
-    highlight.style.left = `${next.offsetLeft}px`;
-    highlight.style.top = `${next.offsetTop}px`;
-    highlight.style.width = `${bounds.width}px`;
-    highlight.style.height = `${bounds.height}px`;
-    if (initialized && animate && active !== next && !reducedMotion.matches) {
-      const dx = previous.left - bounds.left;
-      const scale = previous.width / bounds.width;
-      animation = highlight.animate(
-        [
-          { transform: `translateX(${dx}px) scale(${scale}, 1)` },
-          {
-            transform: `translateX(${dx * 0.45}px) scale(1.18, 0.84)`,
-            offset: 0.3,
-          },
-          {
-            transform: `translateX(${-dx * 0.055}px) scale(0.94, 1.09)`,
-            offset: 0.65,
-          },
-          {
-            transform: `translateX(${dx * 0.018}px) scale(1.025, 0.98)`,
-            offset: 0.83,
-          },
-          { transform: "translateX(0) scale(1)" },
-        ],
-        { duration: 280, easing: "ease-in-out" },
-      );
-    }
-    active = next;
-    initialized = true;
-  }
-
-  const mutation = new MutationObserver(() => updateHighlight());
-  mutation.observe(nav, {
-    subtree: true,
-    attributes: true,
-    attributeFilter: ["aria-current"],
-  });
-  const resize = new ResizeObserver(() => updateHighlight(false));
-  resize.observe(nav);
-  document.fonts.ready.then(() => {
-    if (lifecycle.active) updateHighlight(false);
-  });
-  lifecycle
-    .listen(reducedMotion)
-    .addEventListener("change", () => updateHighlight(false));
-  updateHighlight(false);
 
   type Gesture = {
     x: number;
@@ -241,10 +179,6 @@ export function initializeNavigation(
   lifecycle.listen(window).addEventListener("resize", cleanup);
   return () => {
     lifecycle.dispose();
-    mutation.disconnect();
-    resize.disconnect();
-    animation?.cancel();
     cleanup();
-    highlight.remove();
   };
 }

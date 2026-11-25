@@ -37,3 +37,10 @@
   margin-inline: 6px;
   color: var(--quiet);
 }
+
+.divided-rows {
+  border-bottom: 1px solid var(--line-soft);
+}
+.divided-rows > * {
+  border-top: 1px solid var(--line-soft);
+}

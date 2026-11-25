@@ -106,6 +106,12 @@ function renderLink(link: LinkPresentation, iconOnly = false): string {
   </a>`;
 }
 
+function renderLinkList(links: readonly LinkPresentation[]): string {
+  return /* HTML */ `<ul class="external-links divided-rows">
+    ${links.map((link) => /* HTML */ `<li>${renderLink(link)}</li>`).join("")}
+  </ul>`;
+}
+
 function renderArtistLinks(links: LinkPresentation[]): string {
   const inlineCount = links[2]?.provider ? 3 : 2;
   const inline = links.slice(0, inlineCount);
@@ -123,9 +129,7 @@ function renderArtistLinks(links: LinkPresentation[]): string {
             <summary class="artist-link-icon" aria-label="More links">
               <span aria-hidden="true">⋯</span>
             </summary>
-            <div class="external-links">
-              ${extra.map((link) => renderLink(link)).join("")}
-            </div>
+            ${renderLinkList(extra)}
           </details>`
         : ""
     }
@@ -141,7 +145,5 @@ export function renderExternalLinks(
   if (!items.length) return "";
   if (appearance === "icons") return renderArtistLinks(items);
 
-  return /* HTML */ `<div class="external-links">
-    ${items.map((link) => renderLink(link)).join("")}
-  </div>`;
+  return renderLinkList(items);
 }

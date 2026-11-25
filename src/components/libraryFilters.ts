@@ -12,7 +12,10 @@ import {
   updateFilterCount,
   type BrowseScope,
 } from "./catalogFilters";
-import { renderCategoryFilter } from "./libraryCategoryFilters";
+import {
+  categoryFilterLabels,
+  renderCategoryFilter,
+} from "./libraryCategoryFilters";
 import { icon, starPath } from "./icons";
 import {
   isVinylStatus,
@@ -32,7 +35,7 @@ const labels: Record<FilterField | "instrumentCategory", string> = {
   genres: "Genre",
   artists: "Artist",
   country: "Country",
-  instruments: "Featured instruments",
+  instruments: categoryFilterLabels.instruments,
   instrumentCategory: "Category",
   vinylStatus: "Vinyl status",
 };

@@ -1,13 +1,50 @@
-.listen-card:hover {
-  border-color: var(--muted);
+.listen-row {
+  display: block;
+  width: 100%;
+  padding: 4px 2px 6px;
+  border-inline: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.listen-row {
+  cursor: pointer;
+}
+.listen-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 13px;
+  font-weight: 650;
 }
 .listen-edit {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 12px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  min-height: 40px;
   color: var(--muted);
-  font-size: 12px;
+}
+.listen-notes {
+  display: block;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+button.listen-row:focus-visible {
+  outline-offset: -2px;
+}
+button.listen-row:is(:active, :focus-visible) {
+  background: var(--color-selected);
+}
+@media (hover: hover) {
+  button.listen-row:hover:not(:active, :focus-visible) {
+    background: var(--panel-hover);
+  }
 }
 .listen-delete {
   padding: 18px 24px;
@@ -85,21 +122,12 @@
   }
 }
 
-.listen-card-linked {
-  cursor: auto;
-}
-.listen-card-linked .listen-edit {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
 .listen-note-link {
   color: var(--color-accent-text);
   font-weight: 700;
   text-decoration: none;
 }
-.listen-note-link:hover,
-.listen-card-linked .listen-edit:hover {
+.listen-note-link:hover {
   color: var(--ink);
 }
 .listen-note-editor {
@@ -210,20 +238,18 @@
 .activity-entry {
   display: grid;
   position: relative;
-  --activity-artwork-size: 60px;
-  grid-template-columns: var(--activity-artwork-size) minmax(0, 1fr);
-  column-gap: 12px;
-  padding: 12px;
-  border-top: 1px solid var(--line);
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 8px 2px;
 }
 
 .activity-entry > .cover {
-  aspect-ratio: auto;
-  min-height: var(--activity-artwork-size);
+  border-radius: 4px;
 }
 
 .activity-entry > .listen-notes {
-  grid-column: 2;
+  grid-column: 2 / -1;
 }
 
 .activity-entry .listen-note-link {
@@ -237,8 +263,10 @@
   content: "";
 }
 
-.activity-entry:has(.activity-album:hover) {
-  background: var(--panel-hover);
+@media (hover: hover) {
+  .activity-entry:has(.activity-album:hover) {
+    background: var(--panel-hover);
+  }
 }
 
 .activity-entry:has(.activity-album:focus-visible) {
@@ -256,9 +284,4 @@
   color: var(--muted);
   font-size: 13px;
   overflow-wrap: anywhere;
-}
-
-.activity-entry .rating {
-  display: inline-flex;
-  margin-top: 5px;
 }

@@ -30,14 +30,25 @@ export function stars(rating: number): string {
   >`;
 }
 
-export function renderRating(rating: number | null | undefined): string {
-  return rating
-    ? /* HTML */ `<span
-        class="rating"
-        aria-label="${displayRating(rating)} out of 5 stars"
-        >${stars(rating)}</span
-      >`
-    : /* HTML */ `<span class="rating unrated" aria-label="Unrated"
-        >${stars(0)}</span
-      >`;
+export function renderRating(
+  rating: number | null | undefined,
+  showUnratedLabel = false,
+): string {
+  if (rating)
+    return /* HTML */ `<span
+      class="rating"
+      role="img"
+      aria-label="${displayRating(rating)} out of 5 stars"
+      >${stars(rating)}</span
+    >`;
+
+  if (showUnratedLabel)
+    return /* HTML */ `<span class="unrated unrated-label">Unrated</span>`;
+
+  return /* HTML */ `<span
+    class="rating unrated"
+    role="img"
+    aria-label="Unrated"
+    >${stars(0)}</span
+  >`;
 }

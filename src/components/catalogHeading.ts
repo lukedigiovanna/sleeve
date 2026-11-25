@@ -9,7 +9,7 @@ export function renderCatalogHeading(
     <h1 id="page-title">${title}</h1>
     <button
       type="button"
-      class="button primary catalog-add"
+      class="button catalog-add"
       data-action="new-catalog-${item}"
       aria-label="${label}"
       title="${label}"
