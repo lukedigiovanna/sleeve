@@ -28,7 +28,7 @@ const providers = [
   },
   {
     name: "Discogs",
-    icon: "disc",
+    icon: "discogs",
     matches: (domain: string) =>
       domain === "discogs.com" || domain.endsWith(".discogs.com"),
   },
