@@ -58,11 +58,6 @@
   gap: 8px;
   padding: 0 10px;
 }
-.search-field:focus-within,
-.select-wrap:focus-within {
-  outline: 2px solid var(--sage);
-  outline-offset: 2px;
-}
 .search-field input,
 .select-wrap select {
   width: 100%;
@@ -84,10 +79,6 @@
 .field textarea::placeholder {
   color: var(--quiet);
   opacity: 1;
-}
-.search-field input:focus,
-.select-wrap select:focus {
-  outline: none;
 }
 .select-wrap {
   gap: 0;

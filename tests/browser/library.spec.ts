@@ -787,11 +787,32 @@ test("create album marks the required title and shows draft status after editing
   await expect(
     form.getByRole("button", { name: "Search Apple Music" }),
   ).toHaveCount(0);
-  for (const name of ["title", "year", "label", "artwork"]) {
+  for (const [name, placeholder] of Object.entries({
+    title: "Enter album title",
+    year: "e.g. 1997",
+    label: "Enter record label",
+    artwork: "https://…",
+  })) {
     const input = details.locator(`[name="${name}"]`);
     await expect(input).toHaveValue("");
-    await expect(input).toHaveAttribute("placeholder", "");
+    await expect(input).toHaveAttribute("placeholder", placeholder);
   }
+  const artist = details.getByRole("searchbox", { name: "Artists" });
+  const regularBorder = await artist.evaluate(
+    (input) => getComputedStyle(input).borderColor,
+  );
+  await title.focus();
+  await page.keyboard.press("Tab");
+  await expect(artist).toBeFocused();
+  await expect(artist).toHaveCSS("outline-style", "none");
+  await expect(artist).not.toHaveCSS("border-color", regularBorder);
+  expect(
+    await details
+      .locator("input")
+      .evaluateAll((inputs) =>
+        inputs.map((input) => input.id || input.getAttribute("name")),
+      ),
+  ).toEqual(["title", "artist-query", "year", "label", "artwork"]);
   await expect(
     links.getByRole("textbox", { name: "URL", exact: true }),
   ).toHaveValue("");

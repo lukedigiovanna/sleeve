@@ -164,8 +164,7 @@
 #catalog-genre-form .field + .field {
   margin-top: 18px;
 }
-#catalog-genre-form .field input,
-#catalog-genre-form .field select {
+:where(#catalog-genre-form) .field :is(input, select) {
   height: 40px;
   min-height: 40px;
   padding: 8px 10px;

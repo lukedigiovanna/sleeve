@@ -540,14 +540,14 @@ export class AlbumEditor {
           aria-labelledby="album-details-title"
         >
           <h3 id="album-details-title">Album details</h3>
+          ${field(/* HTML */ `Album title <span class="muted" aria-hidden="true">(required)</span>`, "title", album.title, { placeholder: "Enter album title", attributes: 'required maxlength="150"' })}
+          ${this.dependencies.pickers.artistPicker(album.artists ?? [])}
           <div class="field-grid">
-            ${field(/* HTML */ `Album title <span class="muted" aria-hidden="true">(required)</span>`, "title", album.title, { attributes: 'required maxlength="150"' })}
-            ${field("Release year", "year", album.releaseYear, { type: "number", attributes: 'min="1000" max="9999" step="1"' })}
+            ${field("Release year", "year", album.releaseYear, { type: "number", placeholder: "e.g. 1997", attributes: 'min="1000" max="9999" step="1"' })}
+            ${field("Record label", "label", album.recordLabel, { placeholder: "Enter record label", attributes: 'maxlength="100"' })}
           </div>
-          ${field("Record label", "label", album.recordLabel, { attributes: 'maxlength="100"' })}
           ${catalogImageField("Artwork URL", album.title ?? "", webUrl(album.artworkUrl)?.href, false, [], "artwork")}
         </section>
-        ${this.dependencies.pickers.artistPicker(album.artists ?? [])}
         ${this.dependencies.pickers.genrePicker(album.genres ?? [], () => this.suggestions("genre", album.genreSuggestions))}
         ${this.dependencies.pickers.instrumentPicker(album.instruments ?? [], () => this.suggestions("instrument", album.instrumentSuggestions))}
         <section class="link-form" aria-labelledby="music-links-title">

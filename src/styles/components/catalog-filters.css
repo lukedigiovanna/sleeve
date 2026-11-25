@@ -101,8 +101,7 @@
   font-size: 13px;
   font-weight: 650;
 }
-.library-filter-controls input[type="search"],
-.library-filter-controls input[type="number"] {
+.library-filter-controls input:where([type="search"], [type="number"]) {
   width: 100%;
   min-width: 0;
   padding: 6px 8px;

@@ -66,6 +66,10 @@ test("themes switch immediately, style every page, and persist through refresh",
       background,
     );
     await page.locator("#auth-demo").click();
+    const themeSelect = page.locator("#theme-select");
+    const selectBorder = await themeSelect.evaluate(
+      (select) => getComputedStyle(select).borderColor,
+    );
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.locator("#theme-select")).toHaveValue(theme);
     await expect(page.locator("#page-title")).toHaveCSS(
@@ -76,11 +80,9 @@ test("themes switch immediately, style every page, and persist through refresh",
       path: `test-results/theme-${theme}-${test.info().project.name}.png`,
       fullPage: true,
     });
-    await page.locator("#theme-select").focus();
-    await expect(page.locator("#theme-select")).toHaveCSS(
-      "outline-style",
-      "solid",
-    );
+    await themeSelect.focus();
+    await expect(themeSelect).toHaveCSS("outline-style", "none");
+    await expect(themeSelect).not.toHaveCSS("border-color", selectBorder);
 
     await page.getByRole("button", { name: "Close settings" }).click();
 
@@ -99,6 +101,15 @@ test("themes switch immediately, style every page, and persist through refresh",
         ),
       ).toBe(true);
     }
+    const search = page.getByRole("searchbox", { name: "Search library" });
+    const searchField = page.locator(".search-field").filter({ has: search });
+    const searchBorder = await searchField.evaluate(
+      (field) => getComputedStyle(field).borderColor,
+    );
+    await search.focus();
+    await expect(search).toHaveCSS("outline-style", "none");
+    await expect(searchField).toHaveCSS("outline-style", "none");
+    await expect(searchField).not.toHaveCSS("border-color", searchBorder);
     if (theme === "soul") {
       await page
         .getByRole("button", { name: "List view", exact: true })

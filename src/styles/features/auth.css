@@ -104,7 +104,7 @@
   margin-block: 19px 8px;
   font-size: 13px;
 }
-#auth-form input {
+:where(#auth-form) input {
   width: 100%;
   min-height: 46px;
   padding: 10px 13px;

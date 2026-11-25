@@ -52,7 +52,7 @@ export function field(
 export function linkRow(link: Partial<AlbumLink> = {}): string {
   return /* HTML */ `<div class="link-fields">
     ${field("URL", "linkUrl", link.url, { type: "url", placeholder: "https://…", attributes: 'maxlength="2000"' })}
-    ${field("Label", "linkLabel", link.label, { attributes: 'maxlength="60"' })}
+    ${field("Label", "linkLabel", link.label, { placeholder: "e.g. Bandcamp", attributes: 'maxlength="60"' })}
     <button
       class="icon-button remove-link"
       type="button"
@@ -80,7 +80,7 @@ export function catalogImageField(
     data-name="${escapeHtml(name)}"
     data-image-field="${escapeHtml(fieldName)}"
   >
-    ${field(label, fieldName, url, { type: "url", placeholder: isArtwork ? "" : "https://…", attributes: 'maxlength="2000"', help: artist || isArtwork ? "" : "Paste an image URL. Account saves store an optimized copy." })}
+    ${field(label, fieldName, url, { type: "url", placeholder: "https://…", attributes: 'maxlength="2000"', help: artist || isArtwork ? "" : "Paste an image URL. Account saves store an optimized copy." })}
     <div class="catalog-image-preview">
       ${isArtwork ? cover({ artworkUrl: url }) : catalogImage(name, url, artist, categories)}
     </div>
