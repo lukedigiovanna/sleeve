@@ -52,7 +52,7 @@ export function categoryFields(
   name = "category",
 ): string {
   return /* HTML */ `<fieldset class="category-fields">
-    <legend>Categories <span class="muted">(optional)</span></legend>
+    <legend>Categories</legend>
     <p class="form-hint">Choose all that apply.</p>
     <div class="category-options">
       ${instrumentCategories.map((category) => /* HTML */ `<label><input type="checkbox" name="${name}" value="${category}" ${selected.includes(category) ? "checked" : ""} /><span>${categoryLabel(category)}</span></label>`).join("")}

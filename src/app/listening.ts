@@ -7,7 +7,6 @@ import { makeId } from "./id";
 import type { Album, ListeningEntry } from "../types/albums";
 import { ratingLabels } from "../data/mockData";
 import { escapeHtml } from "../components/html";
-import { icon } from "../components/icons";
 import { artistText } from "../components/presentation";
 import type { LibraryData } from "../types/library";
 import { ListeningNoteEditor } from "../components/listeningNoteEditor";
@@ -49,23 +48,6 @@ export function createListening(ops: ListeningDependencies): Listening {
               ${escapeHtml(album.title)}
               <span class="separator">·</span> ${escapeHtml(artistText(album))}
             </p>
-            <div class="listen-draft-status">
-              <button
-                class="icon-button listen-draft-button"
-                type="button"
-                aria-label="Draft status"
-                aria-describedby="listen-draft-message"
-                aria-controls="listen-draft-message"
-                aria-expanded="false"
-              >
-                ${icon("draft", 17)}
-              </button>
-              <span
-                id="listen-draft-message"
-                role="status"
-                data-draft-status
-              ></span>
-            </div>
           </div>
           ${field("Date listened", "date", entry?.listenedAt.slice(0, 10) ?? today(), { type: "date", attributes: 'required min="1900-01-01" max="' + today() + '"' })}
           <fieldset class="rate-field">
@@ -138,17 +120,6 @@ ${escapeHtml(entry?.notes ?? "")}</textarea>
       form: ops.editor.querySelector("#listen-form")!,
       targets: () => listeningNoteTargets(ops.library()),
       suggested: suggestedNoteLinks(album),
-    });
-
-    const draftButton = ops.editor.querySelector<HTMLButtonElement>(
-      ".listen-draft-button",
-    )!;
-    draftButton.addEventListener("click", () => {
-      const expanded = draftButton.getAttribute("aria-expanded") === "true";
-      draftButton.setAttribute("aria-expanded", String(!expanded));
-    });
-    draftButton.addEventListener("blur", () => {
-      draftButton.setAttribute("aria-expanded", "false");
     });
 
     const preview = ops.editor.querySelector<HTMLElement>("#rating-stars")!;

@@ -73,10 +73,8 @@
 }
 .inline-instrument-create {
   margin-top: 10px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--color-surface);
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
 }
 .inline-instrument-create .category-fields {
   margin: 0 0 12px;
