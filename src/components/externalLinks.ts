@@ -3,26 +3,81 @@ import { escapeHtml } from "./html";
 import { icon } from "./icons";
 import { webUrl } from "./presentation";
 
-function linkProvider(domain: string): { name: string; icon: string } {
-  if (domain === "music.apple.com")
-    return { name: "Apple Music", icon: "music" };
-  if (
-    ["youtube.com", "music.youtube.com", "m.youtube.com", "youtu.be"].includes(
-      domain,
-    )
-  )
-    return { name: "YouTube", icon: "play" };
-  if (domain === "wikipedia.org" || domain.endsWith(".wikipedia.org"))
-    return { name: "Wikipedia", icon: "wikipedia" };
-  if (domain === "discogs.com" || domain.endsWith(".discogs.com"))
-    return { name: "Discogs", icon: "disc" };
-  return { name: domain, icon: "link" };
-}
+const providers = [
+  {
+    name: "Apple Music",
+    icon: "music",
+    matches: (domain: string) => domain === "music.apple.com",
+  },
+  {
+    name: "YouTube",
+    icon: "play",
+    matches: (domain: string) =>
+      [
+        "youtube.com",
+        "music.youtube.com",
+        "m.youtube.com",
+        "youtu.be",
+      ].includes(domain),
+  },
+  {
+    name: "Wikipedia",
+    icon: "wikipedia",
+    matches: (domain: string) =>
+      domain === "wikipedia.org" || domain.endsWith(".wikipedia.org"),
+  },
+  {
+    name: "Discogs",
+    icon: "disc",
+    matches: (domain: string) =>
+      domain === "discogs.com" || domain.endsWith(".discogs.com"),
+  },
+] as const;
 
 interface LinkPresentation {
   href: string;
   label: string;
   iconName: string;
+  priority: number;
+  provider?: (typeof providers)[number]["name"];
+}
+
+function orderedLinks(links: readonly ExternalLink[]): LinkPresentation[] {
+  return links
+    .flatMap((link) => {
+      const parsed = webUrl(link.url);
+      if (!parsed) return [];
+
+      const domain = parsed.hostname.replace(/^www\./, "");
+      const index = providers.findIndex((provider) => provider.matches(domain));
+      const provider = providers[index];
+
+      return [
+        {
+          href: parsed.href,
+          label: link.label || provider?.name || domain,
+          iconName: provider?.icon ?? "link",
+          priority: index < 0 ? providers.length : index,
+          provider: provider?.name,
+        },
+      ];
+    })
+    .sort((a, b) => a.priority - b.priority);
+}
+
+export interface ListeningLink {
+  href: string;
+  provider: "Apple Music" | "YouTube";
+}
+
+export function preferredListeningLink(
+  links: readonly ExternalLink[],
+): ListeningLink | undefined {
+  for (const { href, provider } of orderedLinks(links)) {
+    if (provider === "Apple Music" || provider === "YouTube") {
+      return { href, provider };
+    }
+  }
 }
 
 function renderLink(link: LinkPresentation, iconOnly = false): string {
@@ -52,15 +107,10 @@ function renderLink(link: LinkPresentation, iconOnly = false): string {
 }
 
 function renderArtistLinks(links: LinkPresentation[]): string {
-  const ordered = [
-    ...links.filter((link) => link.iconName !== "link"),
-    ...links.filter((link) => link.iconName === "link"),
-  ];
-  const inline = ordered.slice(0, 2);
-  const discogs = ordered.find((link) => link.iconName === "disc");
-  if (discogs && !inline.includes(discogs)) inline.push(discogs);
+  const inlineCount = links[2]?.provider ? 3 : 2;
+  const inline = links.slice(0, inlineCount);
+  const extra = links.slice(inlineCount);
 
-  const extra = ordered.filter((link) => !inline.includes(link));
   return /* HTML */ `<div
     class="artist-links"
     role="group"
@@ -86,18 +136,8 @@ export function renderExternalLinks(
   links: readonly ExternalLink[],
   appearance: "list" | "icons" = "list",
 ): string {
-  const items = links.flatMap((link) => {
-    const parsed = webUrl(link.url);
-    if (!parsed) return [];
-    const provider = linkProvider(parsed.hostname.replace(/^www\./, ""));
-    return [
-      {
-        href: parsed.href,
-        label: link.label || provider.name,
-        iconName: provider.icon,
-      },
-    ];
-  });
+  const items = orderedLinks(links);
+
   if (!items.length) return "";
   if (appearance === "icons") return renderArtistLinks(items);
 
