@@ -29,8 +29,8 @@ function renderEntry(
         >${escapeHtml(album.title)}</a
       >
       <div class="activity-artist">${escapeHtml(artistText(album))}</div>
-      ${listen.rating === null ? "" : renderRating(listen.rating)}
     </div>
+    ${listen.rating === null ? "" : renderRating(listen.rating)}
     ${
       listen.notes
         ? /* HTML */ `<div class="listen-notes">${note.html}</div>`
@@ -80,7 +80,7 @@ export function renderActivitySection(library: LibraryData): string {
                       >${formatListeningDate(date)}</time
                     >
                   </h3>
-                  <ul class="activity-list">
+                  <ul class="activity-list divided-rows">
                     ${day.map((entry) => renderEntry(entry, targets)).join("")}
                   </ul>
                 </section>`,

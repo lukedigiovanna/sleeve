@@ -39,8 +39,7 @@
   align-items: center;
   margin-bottom: 12px;
 }
-.album-list-heading .detail-heading,
-.album-list-heading .layout-toggle {
+.album-list-heading .detail-heading {
   margin-bottom: 0;
 }
 

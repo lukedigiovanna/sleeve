@@ -54,19 +54,47 @@ test("header actions fit the viewport and retain accessible names", async ({
   const add = header.getByRole("button", { name: "Add album", exact: true });
   const profile = header.getByRole("link", { name: "Profile", exact: true });
 
-  if (isMobile) {
-    await expect(add.locator(".top-add-label")).toBeHidden();
-    for (const [action, size] of [
-      [add, "40px"],
-      [profile, "44px"],
-    ] as const) {
-      await expect(action).toHaveCSS("width", size);
-      await expect(action).toHaveCSS("height", size);
-      await expect(action).toBeInViewport({ ratio: 1 });
-    }
-  } else {
-    await expect(add.locator(".top-add-label")).toBeVisible();
+  const restingColor = await profile.evaluate(
+    (link) => getComputedStyle(link).color,
+  );
+  for (const action of [add, profile]) {
+    await expect(action).toHaveCSS("width", "46px");
+    await expect(action).toHaveCSS("height", "46px");
+    await expect(action).toBeInViewport({ ratio: 1 });
+    await expect(action).toHaveCSS("color", restingColor);
+    await expect(action).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(action.locator("svg")).toHaveCSS("width", "26px");
   }
+  await expect(profile).toHaveCSS("border-top-width", "0px");
+  if (!isMobile) {
+    await add.hover();
+    await expect(add).toHaveCSS("color", "rgb(145, 191, 255)");
+    await expect(add).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await page.mouse.down();
+    await expect(add).toHaveCSS("color", "rgb(182, 214, 255)");
+    await page.mouse.move(0, 0);
+    await page.mouse.up();
+  }
+  const nav = header.getByRole("navigation", { name: "Main navigation" });
+  const currentTab = nav.locator('[aria-current="page"]');
+  await expect(currentTab).toHaveText("Library");
+  const underline = await currentTab.evaluate((link) => {
+    const style = getComputedStyle(link, "::after");
+    return {
+      height: style.height,
+      distanceFromCenter: parseFloat(style.top) - link.clientHeight / 2,
+    };
+  });
+  expect(underline.height).toBe("2px");
+  expect(underline.distanceFromCenter).toBeGreaterThan(7);
+  expect(underline.distanceFromCenter).toBeLessThan(14);
+
+  const navBounds = (await nav.boundingBox())!;
+  const headerBounds = (await header.boundingBox())!;
+  expect(navBounds.x + navBounds.width / 2).toBeCloseTo(
+    headerBounds.x + headerBounds.width / 2,
+    0,
+  );
 
   await add.click();
   await expect(page.locator("#editor")).toBeVisible();

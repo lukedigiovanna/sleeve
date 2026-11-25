@@ -24,44 +24,35 @@ import {
 import { formatListeningDate } from "../components/listeningDate";
 import { renderRating } from "../components/rating";
 
-function historyCard(
+function renderHistoryRow(
   listen: ListeningEntry,
   targets: ReadonlyMap<string, NoteLinkTarget>,
 ): string {
   const date = formatListeningDate(listen.listenedAt);
   const note = renderListeningNote(listen.notes ?? "", targets);
   const label = `Edit listen from ${date}`;
+  const editAttributes = `data-action="edit-listen" data-id="${escapeHtml(listen.id)}" aria-label="${label}"`;
+  const editIcon = icon("edit", 15);
+  const edit = note.hasLinks
+    ? /* HTML */ `<button
+        type="button"
+        class="icon-button listen-edit"
+        ${editAttributes}
+      >
+        ${editIcon}
+      </button>`
+    : /* HTML */ `<span class="listen-edit">${editIcon}</span>`;
   const body = /* HTML */ `<span class="listen-top">
       <time datetime="${escapeHtml(listen.listenedAt)}">${date}</time>
-      ${renderRating(listen.rating)}
+      ${renderRating(listen.rating, true)} ${edit}
     </span>
     ${listen.notes ? /* HTML */ `<span class="listen-notes">${note.html}</span>` : ""}`;
-  const edit = /* HTML */ `${icon("edit", 14)} Edit listen`;
 
-  if (note.hasLinks) {
-    return /* HTML */ `<article class="listen-card listen-card-linked">
-      ${body}
-      <button
-        type="button"
-        class="listen-edit"
-        data-action="edit-listen"
-        data-id="${escapeHtml(listen.id)}"
-        aria-label="${label}"
-      >
-        ${edit}
-      </button>
-    </article>`;
-  }
+  if (note.hasLinks)
+    return /* HTML */ `<article class="listen-row">${body}</article>`;
 
-  return /* HTML */ `<button
-    type="button"
-    class="listen-card"
-    data-action="edit-listen"
-    data-id="${escapeHtml(listen.id)}"
-    aria-label="${label}"
-  >
+  return /* HTML */ `<button type="button" class="listen-row" ${editAttributes}>
     ${body}
-    <span class="listen-edit">${edit}</span>
   </button>`;
 }
 
@@ -259,7 +250,6 @@ export function renderAlbumDetailView(
           <div class="detail-heading">
             ${icon("history", 21)}
             <h2 id="history-title">Listening history</h2>
-            <span class="count-pill">${listens.length}</span>
             <button
               type="button"
               class="button section-edit"
@@ -271,7 +261,9 @@ export function renderAlbumDetailView(
           </div>
           ${
             listens.length
-              ? listens.map((listen) => historyCard(listen, targets)).join("")
+              ? /* HTML */ `<div class="divided-rows">
+                  ${listens.map((listen) => renderHistoryRow(listen, targets)).join("")}
+                </div>`
               : /* HTML */ `<div class="empty detail-empty">
                   <h3>No listens logged yet</h3>
                   <p>Add a rating and notes after your next listen.</p>

@@ -1,3 +1,4 @@
+import { renderResultsMeta } from "../components/resultsMeta";
 import { findCountry } from "../app/countries";
 import { libraryUrl } from "../app/libraryUrl";
 import { countryFlag } from "../components/countryFlag";
@@ -78,7 +79,7 @@ export function renderArtistsView(
     <div id="artist-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data, "artist")}
     </div>
-    <p id="artists-count" class="result-count" role="status"></p>
+    ${renderResultsMeta("artists")}
     <div id="artists-list"></div>
   </section>`;
 }
@@ -143,7 +144,7 @@ export function updateArtistsView(
   root.querySelector("#artists-count")!.textContent =
     `${results.length} ${results.length === 1 ? "artist" : "artists"}`;
   root.querySelector("#artists-list")!.innerHTML = results.length
-    ? /* HTML */ `<ul class="catalog-row-list">
+    ? /* HTML */ `<ul class="divided-rows catalog-row-list">
         ${results.map(({ item, count }) => renderArtistRow(item, count)).join("")}
       </ul>`
     : renderArtistEmpty(Boolean(data.artists.length));

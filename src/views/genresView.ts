@@ -1,3 +1,4 @@
+import { renderResultsMeta } from "../components/resultsMeta";
 import { renderCatalogHeading } from "../components/catalogHeading";
 import { renderCatalogFilters } from "../components/catalogFilters";
 import type { Album, Genre } from "../types/albums";
@@ -5,9 +6,15 @@ import { escapeHtml as e } from "../components/html";
 import { genrePaths, genreUrl, includesGenre } from "../app/genres";
 import { renderAlbumListHeading } from "../components/albumListHeading";
 import { renderAlbumGrid } from "../components/albumGrid";
+import { icon } from "../components/icons";
+function genreAlbumCount(count: number): string {
+  return `${count} ${count === 1 ? "album" : "albums"}`;
+}
+
 function renderGenreLeaf(genre: Genre, count: number): string {
   return /* HTML */ `<a class="genre-leaf-link" href="${genreUrl(genre.id)}"
-    ><span>${e(genre.name)}</span><span class="muted">${count} albums</span></a
+    ><span>${e(genre.name)}</span
+    ><span class="muted">${genreAlbumCount(count)}</span></a
   >`;
 }
 
@@ -37,7 +44,7 @@ function renderGenreTree(
                       <span class="genre-toggle-label"
                         ><span>${e(genre.name)}</span
                         ><span class="muted"
-                          >${counts.get(genre.id) ?? 0} albums</span
+                          >${genreAlbumCount(counts.get(genre.id) ?? 0)}</span
                         ></span
                       ><a
                         class="genre-view-link"
@@ -106,7 +113,7 @@ export function renderGenresView(
     ${renderCatalogHeading("Genres", "genre")}
     <div class="instrument-toolbar genre-toolbar">
       <label class="search-field"
-        ><span class="sr-only">Search genres</span
+        >${icon("search")}<span class="sr-only">Search genres</span
         ><input
           id="genres-search"
           type="search"
@@ -114,9 +121,7 @@ export function renderGenresView(
           value="${e(query)}" /></label
       >${renderCatalogFilters(/* HTML */ `<label><input id="genres-alphabetical" type="checkbox" ${alphabetical ? "checked" : ""} /> Alphabetical view</label><label><input id="genres-unused" type="checkbox" ${unused ? "checked" : ""} /> Unused only</label>`, Number(alphabetical) + Number(unused))}
     </div>
-    <p id="genres-count" class="result-count" role="status">
-      ${results.length} ${results.length === 1 ? "genre" : "genres"}
-    </p>
+    ${renderResultsMeta("genres", { count: `${results.length} ${results.length === 1 ? "genre" : "genres"}` })}
     <div class="genre-tree">
       ${
         query || alphabetical || unused

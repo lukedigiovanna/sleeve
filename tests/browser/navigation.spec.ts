@@ -156,7 +156,10 @@ test("Activity shows listens by date and opens albums with a return link", async
   await entry.locator(".cover").scrollIntoViewIfNeeded();
   const artwork = await entry.locator(".cover").boundingBox();
   const metadata = await entry.locator(".activity-entry-content").boundingBox();
-  expect(artwork!.height).toBe(metadata!.height);
+  expect(artwork!.height).toBe(artwork!.width);
+  expect(artwork!.y + artwork!.height / 2).toBeCloseTo(
+    metadata!.y + metadata!.height / 2,
+  );
   await page.mouse.click(artwork!.x + artwork!.width / 2, artwork!.y + 10);
   await expect(page.locator("#page-title")).toHaveText(title);
   await page.getByRole("link", { name: "Back to profile" }).click();

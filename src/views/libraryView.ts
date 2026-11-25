@@ -1,3 +1,4 @@
+import { renderResultsMeta } from "../components/resultsMeta";
 import { renderCatalogFilters } from "../components/catalogFilters";
 import { renderLayoutToggle } from "../components/layoutToggle";
 import type { Layout } from "../app/layoutPreferences";
@@ -34,13 +35,15 @@ export function renderLibraryView(
   data: LibraryData,
 ): string {
   return /* HTML */ `<section class="library" aria-labelledby="page-title">
-    <div class="instrument-page-heading catalog-heading">
+    <div class="library-heading instrument-page-heading catalog-heading">
       <h1 id="page-title">Your library</h1>
-      <div class="library-heading-actions">
-        <button type="button" class="button secondary" data-action="discover">
-          Discover</button
-        >${renderLayoutToggle(state.layout)}
-      </div>
+      <button
+        type="button"
+        class="button library-discover"
+        data-action="discover"
+      >
+        ${icon("sparkle", 16)} Discover
+      </button>
     </div>
     <div class="toolbar library-toolbar">
       <label class="search-field"
@@ -48,7 +51,7 @@ export function renderLibraryView(
         ><input
           id="library-query"
           type="search"
-          placeholder="Search albums or artists…"
+          placeholder="Search your library"
           value="${escapeHtml(state.query)}"
       /></label>
       ${renderCatalogFilters(renderLibraryFilters(state.filters, data), Object.keys(state.filters).length)}
@@ -57,7 +60,7 @@ export function renderLibraryView(
     <div id="library-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data)}
     </div>
-    <p id="library-count" class="result-count" role="status"></p>
+    ${renderResultsMeta("library", { controls: renderLayoutToggle(state.layout) })}
     <div id="library-results"></div>
   </section>`;
 }
@@ -84,6 +87,7 @@ export function updateLibrary(
   );
   const sort = state.sort;
   if (sort) filtered.sort((a, b) => compareLibraryAlbums(a, b, sort));
+
   root.querySelector("#library-count")!.textContent =
     filtered.length === albums.length
       ? `${filtered.length} ${filtered.length === 1 ? "album" : "albums"}`

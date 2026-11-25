@@ -72,8 +72,7 @@ export function renderHeader(): string {
           id="top-add"
           aria-label="Add album"
         >
-          <span id="add-icon"></span
-          ><span class="top-add-label">Add album</span>
+          <span id="add-icon"></span>
         </button>
       </div>
     </header>

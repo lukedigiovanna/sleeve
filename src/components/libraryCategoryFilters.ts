@@ -9,11 +9,11 @@ import { escapeHtml } from "./html";
 import { icon } from "./icons";
 import type { BrowseScope } from "./catalogFilters";
 
-const labels: Record<CategoryField, string> = {
+export const categoryFilterLabels: Record<CategoryField, string> = {
   genres: "Genres",
   artists: "Artists",
   country: "Country",
-  instruments: "Featured instruments",
+  instruments: "Instruments",
   instrumentCategory: "Categories",
 };
 
@@ -97,7 +97,7 @@ export function renderCategoryFilter(
   >
     <div class="category-filter-heading">
       <label id="${scope}-${field}-label" for="${scope}-${field}-search"
-        >${labels[field]}</label
+        >${categoryFilterLabels[field]}</label
       >
       <div class="category-filter-search">
         ${icon("search", 15)}<input
@@ -113,7 +113,7 @@ export function renderCategoryFilter(
       class="category-filter-pills"
       data-category-results
       role="group"
-      aria-label="${labels[field]} suggestions"
+      aria-label="${categoryFilterLabels[field]} suggestions"
     >
       ${renderChoices(field, filters, data, "", scope)}
     </div>

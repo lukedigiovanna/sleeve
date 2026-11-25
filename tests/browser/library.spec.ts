@@ -52,8 +52,37 @@ test("catalog album headings keep compact layout toggles on the title row", asyn
         await expect(metadata.locator(".count-pill")).toHaveText(/^\d+$/);
       }
       const title = await heading.locator(".detail-heading").boundingBox();
-      const toggle = await heading.locator(".layout-toggle").boundingBox();
-      expect(toggle!.width).toBeLessThan(100);
+      const chooser = heading.locator(".layout-toggle");
+      await expect(chooser).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+      await expect(
+        chooser.getByRole("button", { name: "Grid view" }),
+      ).toHaveCSS("width", "30px");
+      if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+        const inactive = chooser.locator('[aria-pressed="false"]');
+        await inactive.hover();
+        const highlight = (pressed: boolean) =>
+          chooser.locator(`[aria-pressed="${pressed}"]`).evaluate((button) => {
+            const style = getComputedStyle(button, "::before");
+            return {
+              width: style.width,
+              height: style.height,
+              color: style.backgroundColor,
+            };
+          });
+        const hovered = await highlight(false);
+        const selected = await highlight(true);
+        expect(hovered.color).not.toBe("rgba(0, 0, 0, 0)");
+        expect([hovered.width, hovered.height]).toEqual([
+          selected.width,
+          selected.height,
+        ]);
+        await expect(inactive).toHaveCSS(
+          "background-color",
+          "rgba(0, 0, 0, 0)",
+        );
+      }
+      const toggle = await chooser.boundingBox();
+      expect(toggle!.width).toBe(62);
       expect(
         Math.abs(title!.y + title!.height / 2 - toggle!.y - toggle!.height / 2),
       ).toBeLessThan(1);
@@ -78,52 +107,76 @@ test("catalog album headings keep compact layout toggles on the title row", asyn
   }
 });
 
-test("library heading matches catalog typography and spacing", async ({
+test("browse tabs share heading and toolbar spacing with flat results", async ({
   page,
 }) => {
-  for (const width of [1280, 393]) {
+  for (const width of [1280, 320]) {
     await page.setViewportSize({ width, height: 850 });
+    await page.locator('[data-nav="library"]').click();
+
+    const title = page.locator("#page-title");
+    await expect(title).toHaveText("Your library");
     const measureHeading = () =>
-      page.locator("#page-title").evaluate((heading) => {
-        const style = getComputedStyle(heading);
-        const toolbar = heading
+      title.evaluate((heading) => {
+        const search = heading
           .closest("section")!
           .querySelector(".search-field")!;
+        const bounds = heading
+          .closest(".catalog-heading")!
+          .getBoundingClientRect();
         return {
-          font: style.font,
-          letterSpacing: style.letterSpacing,
-          top: heading.getBoundingClientRect().top,
-          gap:
-            toolbar.getBoundingClientRect().top -
-            heading.getBoundingClientRect().bottom,
+          font: getComputedStyle(heading).font,
+          top: bounds.top,
+          gap: search.getBoundingClientRect().top - bounds.bottom,
         };
       });
-    const library = await measureHeading();
-    const measureResultsGap = () =>
-      page.locator("main .result-count").evaluate((count) => {
-        const firstResult = count.nextElementSibling!.querySelector("li")!;
-        return (
-          firstResult.getBoundingClientRect().top -
-          count.getBoundingClientRect().bottom
-        );
+    const discover = page.getByRole("button", {
+      name: "Discover",
+      exact: true,
+    });
+    const titleBox = (await title.boundingBox())!;
+    const discoverBox = (await discover.boundingBox())!;
+    expect(discoverBox.y + discoverBox.height / 2).toBeCloseTo(
+      titleBox.y + titleBox.height / 2,
+      0,
+    );
+    await expect(discover.locator("svg")).toBeVisible();
+    const albumCount = page.locator("#library-count");
+    await expect(albumCount).toBeVisible();
+    await expect(albumCount).toHaveText(/^\d+ albums$/);
+    const countStyle = (selector: string) =>
+      page.locator(selector).evaluate((element) => {
+        const style = getComputedStyle(element);
+        const row = element.closest(".results-meta")!.getBoundingClientRect();
+        return {
+          font: style.font,
+          color: style.color,
+          rowHeight: row.height,
+          countOffset: element.getBoundingClientRect().top - row.top,
+        };
       });
-    const libraryResultsGap = await measureResultsGap();
-    for (const [route, title] of [
-      ["artists", "Artists"],
-      ["genres", "Genres"],
-      ["instruments", "Instruments"],
+    const albumCountStyle = await countStyle("#library-count");
+
+    const library = await measureHeading();
+    for (const [route, name, row] of [
+      ["artists", "Artists", ".artist-catalog-row"],
+      ["genres", "Genres", ".genre-tree > ul > li"],
+      ["instruments", "Instruments", ".instrument-catalog-row"],
     ]) {
-      if (route === "instruments")
-        await page.evaluate(() => {
-          location.hash = "#instruments";
-        });
-      else await page.locator(`[data-nav="${route}"]`).click();
-      await expect(page.locator("#page-title")).toHaveText(title);
+      const tab = page.locator(`[data-nav="${route}"]`);
+      await tab.click();
+      await expect(title).toHaveText(name);
+      await expect(tab).toHaveAttribute("aria-current", "page");
       expect(await measureHeading()).toEqual(library);
-      expect(await measureResultsGap()).toBe(libraryResultsGap);
+      expect(await countStyle("#" + route + "-count")).toEqual(albumCountStyle);
+      await expect(page.locator(row).first()).toHaveCSS(
+        "background-color",
+        "rgba(0, 0, 0, 0)",
+      );
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBe(width);
     }
-    await page.locator('[data-nav="library"]').click();
-    await expect(page.locator("#page-title")).toHaveText("Your library");
   }
 });
 
@@ -148,8 +201,27 @@ test("library toolbar stays on one row and the sort dropdown orders albums", asy
     expect(Math.abs(search!.y - sort!.y)).toBeLessThanOrEqual(1);
     expect(sort!.x + sort!.width).toBeLessThanOrEqual(width);
     await expect(page.locator(".library-sort-text")).toBeVisible({
-      visible: width > 480,
+      visible: width > 700,
     });
+
+    if (width <= 700) {
+      expect(filters!.width).toBe(40);
+      expect(sort!.width).toBe(40);
+      expect(sort!.height).toBe(40);
+      const row = page.locator(".album-list .album-card").first();
+      const toggle = await page
+        .getByRole("button", { name: "List view" })
+        .boundingBox();
+
+      expect(toggle!.width).toBe(30);
+      expect(toggle!.height).toBe(40);
+      expect(toggle!.y).toBeGreaterThanOrEqual(search!.y + search!.height);
+      expect((await row.boundingBox())!.y).toBeLessThan(275);
+      await expect(row).toHaveCSS("border-top-width", "0px");
+      await expect(
+        page.locator(".album-list .star-fill[style='--fill:50%']").first(),
+      ).toBeVisible();
+    }
 
     const expectNoOverflow = async () => {
       expect(
@@ -223,13 +295,21 @@ test("library toolbar stays on one row and the sort dropdown orders albums", asy
 test("sort categories cycle both directions and off, replacing the active category", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 393, height: 850 });
   const titles = page.locator("#library-results .album-title strong");
   const dropdown = page.locator(".library-sort-dropdown");
   await page.locator(".library-sort").click();
   await expect(page.locator('[data-sort="created"]')).toHaveAccessibleName(
     "Date added, descending",
   );
-  await page.locator('[data-sort="created"]').click();
+  const activeChoice = page.locator('[data-sort="created"]');
+  const sortArrow = activeChoice.locator(".sort-direction .icon");
+  await expect(sortArrow).toHaveCSS("width", "12px");
+  await expect(sortArrow).toHaveCSS(
+    "color",
+    await activeChoice.evaluate((element) => getComputedStyle(element).color),
+  );
+  await activeChoice.click();
   const original = await titles.allTextContents();
 
   for (const category of ["recent", "created", "title", "rating", "year"]) {
@@ -276,7 +356,7 @@ test("sort categories cycle both directions and off, replacing the active catego
   ).toHaveCount(1);
 });
 
-test("unrated albums use muted stars in the library and omit the detail rating", async ({
+test("unrated albums show a label in list view and omit the detail rating", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "Add album", exact: true }).click();
@@ -291,15 +371,18 @@ test("unrated albums use muted stars in the library and omit the detail rating",
     .locator(".album-card")
     .filter({ has: page.locator(".unrated") })
     .first();
+  await expect(unratedCard.locator(".unrated-label")).toHaveText("Unrated");
+  await expect(unratedCard.locator(".unrated-label")).toBeVisible();
+  await expect(unratedCard.locator(".stars")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Grid view" }).click();
   const rating = unratedCard.locator(".rating");
   await expect(rating).toHaveAttribute("aria-label", "Unrated");
-  await expect(rating).toHaveText("");
   await expect(rating.locator(".star")).toHaveCount(5);
   await expect(rating.locator(".star-fill").first()).toHaveAttribute(
     "style",
     "--fill:0%",
   );
-  await expect(rating.locator(".stars")).toHaveCSS("opacity", "1");
   const star = rating.locator(".star").first();
   const starColor = await star.evaluate(
     (element) => getComputedStyle(element).color,
@@ -370,9 +453,13 @@ test("album artwork actions offer the preferred listening link", async ({
   expect(shortcutBounds.y).toBe(vinylBounds.y);
   expect(shortcutBounds.x + shortcutBounds.width).toBeLessThan(vinylBounds.x);
 
-  await expect(musicLinks.getByRole("link").first()).toHaveAccessibleName(
+  const firstLink = musicLinks.getByRole("link").first();
+  await expect(firstLink).toHaveAccessibleName(
     "Apple Music (opens in a new tab)",
   );
+  await expect(firstLink).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(firstLink.locator("..")).toHaveCSS("border-top-width", "1px");
+  await expect(firstLink).toHaveAttribute("target", "_blank");
 
   await edit.click();
   const editor = page.locator("#editor");
@@ -469,9 +556,7 @@ test("listening note smart links survive drafts and open catalog pages", async (
   await expect(page.locator("#editor")).not.toBeVisible();
   await reloadDemo(page);
 
-  const card = page
-    .locator(".listen-card")
-    .filter({ hasText: "Reminds me of" });
+  const card = page.locator(".listen-row").filter({ hasText: "Reminds me of" });
   await expect(card.locator(".listen-notes")).toContainText("A second line.");
   expect(await card.locator(".listen-notes").textContent()).toMatch(
     /\nA second line\.$/,
@@ -504,7 +589,7 @@ test("a saved smart link at the end of a note can be followed by text or deleted
   await page.getByRole("button", { name: "Save listen" }).click();
   await reloadDemo(page);
 
-  const card = page.locator(".listen-card").filter({ hasText: title });
+  const card = page.locator(".listen-row").filter({ hasText: title });
   await card.getByRole("button", { name: /Edit listen from/ }).click();
   const bounds = (await chip.boundingBox())!;
   const x = bounds.x + bounds.width + 8;
@@ -634,10 +719,7 @@ test("note-only listens survive reload and preserve the latest rating", async ({
   const entry = page
     .locator('[data-action="edit-listen"]')
     .filter({ hasText: "A thought about this album" });
-  await expect(entry.locator(".rating")).toHaveAttribute(
-    "aria-label",
-    "Unrated",
-  );
+  await expect(entry.locator(".unrated-label")).toHaveText("Unrated");
   await expect(page.locator(".detail-rating .rating")).toHaveAttribute(
     "aria-label",
     "4 out of 5 stars",
@@ -660,10 +742,7 @@ test("note-only listens survive reload and preserve the latest rating", async ({
   await fiveStars.click();
   await expect(selectedRating).toHaveCount(0);
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(entry.locator(".rating")).toHaveAttribute(
-    "aria-label",
-    "Unrated",
-  );
+  await expect(entry.locator(".unrated-label")).toHaveText("Unrated");
   await expect(page.locator(".detail-rating .rating")).toHaveAttribute(
     "aria-label",
     "4 out of 5 stars",
@@ -1179,8 +1258,16 @@ test("artist countries link to a shareable Library filter with collaboration mat
   await page.getByRole("searchbox", { name: "Search genres" }).fill(genre);
   await page.getByRole("button", { name: `Add ${genre}`, exact: true }).click();
   await expect(page.locator("#artists-count")).toHaveText("1 artist");
-  await expect(page.locator(".artist-catalog-row")).toContainText(
-    "Country test collaborator",
+  const artistRow = page.locator(".artist-catalog-row");
+  const artistName = artistRow.locator(".artist-catalog-name");
+  const flag = artistRow.getByRole("img", { name: "Taiwan" }).locator("img");
+  await expect(artistName).toHaveText("Country test collaborator");
+  await expect(artistName).toHaveCSS("font-size", "16px");
+  await expect(flag).toHaveCSS("height", "13px");
+  const nameBox = (await artistName.boundingBox())!;
+  const flagBox = (await flag.boundingBox())!;
+  expect(flagBox.y + flagBox.height / 2).toBeCloseTo(
+    nameBox.y + nameBox.height / 2,
   );
   await expect(
     page.getByRole("button", { name: "Remove Genre filter" }),
@@ -1310,7 +1397,7 @@ test("instrument rows sort by usage and filter by category", async ({
   expect((await rows.first().boundingBox())?.height).toBeLessThanOrEqual(56);
   expect(
     (await rows.first().locator(".catalog-image").boundingBox())?.width,
-  ).toBe(36);
+  ).toBe(42);
 
   await page.locator('summary[aria-label="Sort instruments"]').click();
   const count = page.getByRole("button", { name: "Album count, descending" });

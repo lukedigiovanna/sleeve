@@ -1,11 +1,4 @@
 /* Optional decoration stays separate from solid, readable semantic colors. */
-.masthead {
-  background-image: var(--color-accent-spectrum, none);
-  background-repeat: no-repeat;
-  background-position: bottom;
-  background-size: 100% 1px;
-}
-
 .button.primary {
   background-image: var(--color-accent-spectrum, none);
   background-repeat: no-repeat;

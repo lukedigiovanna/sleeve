@@ -4,21 +4,36 @@
 .layout-toggle {
   display: flex;
   gap: 2px;
-  padding: 2px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
 }
 .layout-toggle .icon-button {
-  min-height: 28px;
+  position: relative;
+  isolation: isolate;
   min-width: 30px;
-  padding: 4px;
+  min-height: 40px;
+  padding: 0;
+}
+.layout-toggle .icon-button:hover {
+  background: transparent;
+}
+.layout-toggle .icon-button::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 28px;
+  height: 28px;
+  margin: auto;
   border-radius: 5px;
 }
-.layout-toggle .icon-button[aria-pressed="true"] {
-  background: var(--color-selected);
-  color: var(--sage-strong);
+@media (hover: hover) {
+  .layout-toggle .icon-button:hover::before {
+    background: var(--panel-hover);
+  }
 }
+.layout-toggle .icon-button[aria-pressed="true"]::before {
+  background: var(--color-selected);
+}
+
 .toolbar {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) 164px 196px;
@@ -99,10 +114,17 @@
   right: auto;
   left: 10px;
 }
+.results-meta {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 .result-count {
   color: var(--quiet);
   font-size: 12px;
-  margin: 8px 0 11px;
+  margin: 0;
 }
 .album-collection {
   list-style: none;
@@ -255,14 +277,28 @@
 }
 .album-list {
   display: grid;
-  gap: 7px;
 }
 .album-list .album-card {
   grid-template-columns: 52px minmax(0, 1.55fr) minmax(0, 0.7fr) 112px 18px;
   align-items: center;
   min-height: 68px;
-  padding: 7px 14px 7px 7px;
+  padding: 7px 4px 7px 2px;
   gap: 14px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.album-list .album-card:is(:active, :focus-visible) {
+  background: var(--color-selected);
+}
+.album-list .album-card:focus-visible {
+  outline-offset: -2px;
+}
+@media (hover: hover) {
+  .album-list .album-card:hover:not(:active, :focus-visible) {
+    background: var(--panel-hover);
+  }
 }
 .album-list .cover {
   border-radius: 4px;
@@ -381,21 +417,18 @@
   color: var(--sage-strong);
   border-color: var(--line);
 }
-.library-sort-direction {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+.sort-direction {
+  display: inline-flex;
+  color: inherit;
 }
-.library-sort-choice[aria-pressed="true"] .library-sort-direction {
-  background: var(--sage);
-  color: var(--color-accent-foreground);
+.sort-direction .icon {
+  width: 1em;
+  height: 1em;
 }
-.library-sort-direction.ascending .icon {
+.sort-direction.ascending .icon {
   transform: rotate(-90deg);
 }
-.library-sort-direction.descending .icon {
+.sort-direction.descending .icon {
   transform: rotate(90deg);
 }
 
@@ -416,5 +449,73 @@
 @media (max-width: 480px) {
   .library-sort-text {
     display: none;
+  }
+}
+
+.library-heading .library-discover {
+  min-height: 40px;
+  gap: 5px;
+  padding: 4px 6px;
+  background: transparent;
+  color: var(--color-accent-text);
+}
+.library-discover:hover {
+  background: var(--panel-hover);
+}
+:is(.library-toolbar, .genre-toolbar) .search-field,
+:is(.library-toolbar, .genre-toolbar) details > summary.button {
+  min-height: 38px;
+}
+:is(.library-toolbar, .genre-toolbar) .search-field {
+  border-color: var(--line-soft);
+}
+:is(.library-toolbar, .genre-toolbar) .search-field input {
+  padding-block: 5px;
+}
+:is(.library-toolbar, .genre-toolbar) details > summary.button {
+  position: relative;
+  padding: 4px 10px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+:is(.library-toolbar, .genre-toolbar) details > summary.button:hover,
+:is(.library-toolbar, .genre-toolbar) details[open] > summary.button {
+  background: var(--panel-hover);
+  color: var(--ink);
+}
+:is(.library-toolbar, .genre-toolbar) summary.button:has(.genre-filter-count) {
+  color: var(--color-accent-text);
+}
+
+.unrated-label {
+  color: var(--muted);
+  font: 400 12px/1.2 var(--sans);
+}
+
+@media (max-width: 700px) {
+  :is(.library-toolbar, .genre-toolbar) .search-field,
+  :is(.library-toolbar, .genre-toolbar) details > summary.button {
+    min-height: 40px;
+  }
+  :is(.library-toolbar, .genre-toolbar) .search-field input {
+    font-size: 16px;
+  }
+  :is(.library-toolbar, .genre-toolbar) details > summary.button {
+    width: 40px;
+    padding: 0;
+  }
+  :is(.library-toolbar, .genre-toolbar)
+    :is(.genre-filter-text, .library-sort-text) {
+    display: none;
+  }
+  :is(.library-toolbar, .genre-toolbar) .genre-filter-count {
+    position: absolute;
+    top: 1px;
+    right: 0;
+    min-width: 16px;
+    height: 16px;
+    padding-inline: 3px;
+    font-size: 10px;
   }
 }

@@ -3,10 +3,10 @@
   border-bottom: 1px solid var(--line-soft);
 }
 .masthead-inner {
-  min-height: 74px;
+  min-height: 64px;
   display: flex;
   align-items: center;
-  gap: 38px;
+  gap: 8px;
 }
 .brand {
   display: inline-flex;
@@ -26,78 +26,96 @@
 .brand-period {
   color: var(--color-accent-text);
 }
-.top-add {
-  margin-left: auto;
+.main-nav {
+  display: flex;
 }
-.masthead .top-add {
-  --header-action-bg: color-mix(in srgb, var(--accent) 12%, var(--header));
-  background: var(--header-action-bg);
-  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
-  color: var(--ink);
-}
-.masthead .top-add:hover {
-  --header-action-bg: color-mix(in srgb, var(--accent) 20%, var(--header));
-  border-color: var(--sage-strong);
-}
-.top-add .icon {
-  width: 21px;
-  height: 21px;
-  margin-inline: -2px;
-}
-.account-button {
-  display: grid;
-  flex: none;
-  border-radius: 22px;
+.main-nav a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  color: var(--muted);
   font-size: 13px;
 }
-.profile-slot-label,
-.profile-avatar {
-  grid-area: 1 / 1;
-}
-/* Keep the original Profile footprint so the desktop navigation stays put. */
-.profile-slot-label {
-  visibility: hidden;
-  padding-left: 24px;
-}
-.profile-avatar {
-  display: grid;
-  place-items: center;
-  justify-self: start;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--panel);
-  color: var(--muted);
-  font-weight: 680;
-}
-.account-button:hover .profile-avatar {
-  background: var(--panel-hover);
-  color: var(--ink);
-}
-.account-button[aria-current="page"] .profile-avatar {
-  border-color: var(--sage-strong);
+.main-nav a[aria-current="page"] {
   color: var(--color-accent-text);
 }
+.main-nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% + 0.85em);
+  height: 2px;
+  background: var(--color-accent);
+}
+.masthead :is(.top-add, .account-button) {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.top-add {
+  margin-inline-start: auto;
+}
+.masthead :is(.top-add, .account-button) .icon {
+  width: 26px;
+  height: 26px;
+}
+.account-button .icon {
+  stroke-width: 1.4;
+}
+.masthead .account-button[aria-current="page"] {
+  color: var(--color-accent-text);
+}
+@media (hover: hover) {
+  .main-nav a:hover:not([aria-current="page"]) {
+    color: var(--ink);
+  }
+  .masthead :is(.top-add, .account-button):hover {
+    color: light-dark(#235eae, #91bfff);
+  }
+}
+.masthead :is(.top-add, .account-button):active {
+  color: light-dark(#194782, #b6d6ff);
+}
 @media (min-width: 701px) {
-  .account-button {
-    margin-left: -24px;
-    margin-right: 24px;
+  .masthead-inner {
+    position: relative;
+  }
+  .main-nav {
+    position: absolute;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
   }
 }
 @media (max-width: 700px) {
-  .masthead .top-add {
-    width: 40px;
-    min-height: 40px;
-    padding: 0;
+  .masthead {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    transition: transform 500ms ease;
   }
-  .top-add .icon {
-    width: 22px;
-    height: 22px;
-    margin-inline: 0;
+  .masthead.masthead-hidden:not(:focus-within) {
+    transform: translateY(-100%);
   }
-  .top-add-label,
-  .profile-slot-label {
-    display: none;
+  .masthead-inner {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    padding-top: 4px;
+  }
+  .main-nav {
+    order: 3;
+    width: 100%;
+  }
+  .main-nav a {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 2px;
   }
 }

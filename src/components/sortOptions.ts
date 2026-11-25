@@ -63,6 +63,16 @@ interface BrowseSort<Category extends string> {
   labels: Record<Category, string>;
 }
 
+function renderSortDirection(
+  direction: SortSelection<string>["direction"],
+): string {
+  return /* HTML */ `<span
+    class="sort-direction ${direction}"
+    aria-hidden="true"
+    >${icon("arrow")}</span
+  >`;
+}
+
 function renderSortChoices<Category extends string>(
   { scope, labels }: BrowseSort<Category>,
   selected: SortSelection<Category> | null,
@@ -86,11 +96,7 @@ function renderSortChoices<Category extends string>(
         title="${nextActions[direction ?? "off"]}"
       >
         <span>${labels[value]}</span>
-        <span
-          class="library-sort-direction ${direction ?? ""}"
-          aria-hidden="true"
-          >${direction ? icon("arrow", 14) : ""}</span
-        >
+        ${direction ? renderSortDirection(direction) : ""}
       </button>`;
     })
     .join("");
