@@ -1297,6 +1297,52 @@ test("album artwork URL aligns with its preview and restores it from draft", asy
   await expect(preview.locator("img")).toHaveAttribute("src", url);
 });
 
+test("instrument rows sort by usage and filter by category", async ({
+  page,
+}) => {
+  await page.goto("/#instruments");
+  const rows = page.locator(".instrument-catalog-row");
+  const counts = await rows.locator(".catalog-row-count").allTextContents();
+  expect(counts.length).toBeGreaterThan(1);
+  const usage = counts.map((count) => Number.parseInt(count, 10));
+  expect(usage).toEqual([...usage].sort((a, b) => b - a));
+
+  expect((await rows.first().boundingBox())?.height).toBeLessThanOrEqual(56);
+  expect(
+    (await rows.first().locator(".catalog-image").boundingBox())?.width,
+  ).toBe(36);
+
+  await page.locator('summary[aria-label="Sort instruments"]').click();
+  const count = page.getByRole("button", { name: "Album count, descending" });
+  await expect(count).toBeVisible();
+  await page.getByRole("button", { name: "Alphabetical, off" }).click();
+  const names = await rows.locator(".catalog-row-name").allTextContents();
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  await page.keyboard.press("Escape");
+
+  const filters = page.locator(".genre-filter-dropdown summary");
+  await filters.click();
+  const clearFilters = page
+    .locator(".genre-filter-panel")
+    .getByRole("button", { name: "Clear filters" });
+  expect((await clearFilters.boundingBox())?.height).toBe(28);
+  const search = page.getByRole("searchbox", {
+    name: "Search categories",
+  });
+  await search.fill("wood");
+  await page.getByRole("button", { name: "Add Woodwind" }).click();
+  await expect(rows).toHaveCount(2);
+  await search.fill("keyboard");
+  await page.getByRole("button", { name: "Add Keyboard" }).click();
+  await expect(rows).toHaveCount(5);
+  await expect(filters).toHaveAccessibleName("Filters, 1 active");
+  await page.getByRole("button", { name: "Remove Woodwind" }).click();
+  await expect(rows).toHaveCount(3);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Remove Category filter" }).click();
+  await expect(rows).toHaveCount(counts.length);
+});
+
 test("catalog artist and instrument editors validate and retain details", async ({
   page,
 }) => {

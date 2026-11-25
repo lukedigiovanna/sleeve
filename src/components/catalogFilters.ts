@@ -1,6 +1,6 @@
 import { icon } from "./icons";
 
-export type BrowseScope = "library" | "artist";
+export type BrowseScope = "library" | "artist" | "instrument";
 
 function filterLabel(count: number): string {
   return `Filters${count ? `, ${count} active` : ""}`;
@@ -28,7 +28,7 @@ export function renderFilterControls(
   return /* HTML */ `<div class="library-filter-controls">
     ${content}
     <button
-      class="button secondary"
+      class="button secondary clear-filters-button"
       type="button"
       data-action="clear-${scope}-filters"
     >

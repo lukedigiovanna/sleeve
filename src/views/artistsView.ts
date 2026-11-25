@@ -4,7 +4,7 @@ import { countryFlag } from "../components/countryFlag";
 import {
   artistSorting,
   renderSortDropdown,
-  type ArtistSort,
+  type CatalogBrowseSort,
 } from "../components/sortOptions";
 import { catalogImage, catalogStats } from "../components/catalogSummary";
 import { compareSortValues, type SortSelection } from "../app/librarySort";
@@ -37,12 +37,12 @@ export const artistFilterFields = ["country", "genres"] as const;
 export const defaultArtistSort = {
   category: "name",
   direction: "ascending",
-} as const satisfies SortSelection<ArtistSort>;
+} as const satisfies SortSelection<CatalogBrowseSort>;
 
 export interface ArtistsState {
   query: string;
   filters: Pick<LibraryFilters, (typeof artistFilterFields)[number]>;
-  sort: SortSelection<ArtistSort> | null;
+  sort: SortSelection<CatalogBrowseSort> | null;
 }
 
 export function renderArtistsView(
@@ -143,7 +143,7 @@ export function updateArtistsView(
   root.querySelector("#artists-count")!.textContent =
     `${results.length} ${results.length === 1 ? "artist" : "artists"}`;
   root.querySelector("#artists-list")!.innerHTML = results.length
-    ? /* HTML */ `<ul class="artist-catalog-list">
+    ? /* HTML */ `<ul class="catalog-row-list">
         ${results.map(({ item, count }) => renderArtistRow(item, count)).join("")}
       </ul>`
     : renderArtistEmpty(Boolean(data.artists.length));
@@ -152,13 +152,15 @@ export function updateArtistsView(
 function renderArtistRow(item: Artist, count: number): string {
   const country = findCountry(item.country);
   return /* HTML */ `<li>
-    <a class="artist-catalog-row" href="${artistUrl(item.id)}">
+    <a class="catalog-row artist-catalog-row" href="${artistUrl(item.id)}">
       ${catalogImage(item.name, item.photoUrl, true)}
-      <span class="artist-catalog-identity">
-        <strong class="artist-catalog-name">${e(item.name)}</strong>
+      <span class="catalog-row-identity">
+        <strong class="catalog-row-name artist-catalog-name"
+          >${e(item.name)}</strong
+        >
         ${country ? /* HTML */ `<span class="artist-catalog-country" role="img" aria-label="${e(country.name)}" title="${e(country.name)}">${countryFlag(country)}</span>` : ""}
       </span>
-      <span class="artist-catalog-count"
+      <span class="catalog-row-count"
         >${count} ${count === 1 ? "album" : "albums"}</span
       >
       ${icon("chevron", 16)}

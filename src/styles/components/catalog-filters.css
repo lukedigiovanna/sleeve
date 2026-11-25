@@ -87,6 +87,10 @@
   max-height: min(70vh, 720px);
   overflow-y: auto;
 }
+.library-filter-controls > .clear-filters-button {
+  min-height: 28px;
+  padding-block: 3px;
+}
 .library-filter-controls fieldset {
   border: 1px solid var(--line);
   border-radius: 6px;

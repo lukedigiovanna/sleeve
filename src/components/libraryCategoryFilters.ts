@@ -1,9 +1,9 @@
 import type { LibraryData } from "../types/library";
-import type { LibraryFilters } from "../app/libraryFilters";
 import {
   categoryChoices,
   categoryName,
   type CategoryField,
+  type BrowseFilters,
 } from "../app/libraryCategoryFilters";
 import { escapeHtml } from "./html";
 import { icon } from "./icons";
@@ -14,11 +14,12 @@ const labels: Record<CategoryField, string> = {
   artists: "Artists",
   country: "Country",
   instruments: "Featured instruments",
+  instrumentCategory: "Categories",
 };
 
 function renderChoices(
   field: CategoryField,
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   query: string,
   scope: BrowseScope,
@@ -56,13 +57,13 @@ function renderChoices(
 }
 
 function choiceUnit(scope: BrowseScope, count: number): string {
-  const unit = scope === "artist" ? "artist" : "album";
+  const unit = scope === "library" ? "album" : scope;
   return count === 1 ? unit : `${unit}s`;
 }
 
 function renderSelected(
   field: CategoryField,
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   scope: BrowseScope,
 ): string {
@@ -85,7 +86,7 @@ function renderSelected(
 
 export function renderCategoryFilter(
   field: CategoryField,
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   scope: BrowseScope = "library",
 ): string {
@@ -104,7 +105,7 @@ export function renderCategoryFilter(
           id="${scope}-${field}-search"
           data-category-search="${field}"
           placeholder="Search…"
-          aria-label="Search ${field === "country" ? "artist countries" : field}"
+          aria-label="Search ${field === "country" ? "artist countries" : field === "instrumentCategory" ? "categories" : field}"
         />
       </div>
     </div>
@@ -132,7 +133,7 @@ export function renderCategoryFilter(
 function updateCategoryFilter(
   root: ParentNode,
   field: CategoryField,
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   scope: BrowseScope = "library",
 ): void {
@@ -161,7 +162,7 @@ function updateCategoryFilter(
 export interface CategoryFilterControls {
   scope: BrowseScope;
   fields: readonly CategoryField[];
-  filters: LibraryFilters;
+  filters: BrowseFilters;
   data: LibraryData;
 }
 

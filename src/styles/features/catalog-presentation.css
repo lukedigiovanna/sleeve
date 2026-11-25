@@ -1,3 +1,82 @@
+.catalog-row-list {
+  display: grid;
+  gap: 7px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.catalog-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto 16px;
+  align-items: center;
+  min-height: 50px;
+  gap: 10px;
+  padding: 6px 10px 6px 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.catalog-row:hover {
+  background: var(--panel-hover);
+}
+
+.catalog-row .catalog-image {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.catalog-row-identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.catalog-row-name {
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.catalog-row-country {
+  display: flex;
+  flex: none;
+}
+
+.catalog-row-country .country-flag {
+  width: 16px;
+  height: 12px;
+}
+
+.catalog-row-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.catalog-row > .icon {
+  color: var(--quiet);
+}
+
+.instrument-catalog-row .catalog-image {
+  border-radius: 8px;
+}
+.instrument-catalog-row .catalog-image .icon {
+  width: 22px;
+  height: 22px;
+}
+.instrument-row-identity {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.instrument-row-category {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
 .catalog-image {
   position: relative;
   display: grid;
@@ -21,9 +100,6 @@
 .artist-portrait {
   border-radius: 50%;
 }
-.instrument-catalog-row .instrument-row-info {
-  flex: 1;
-}
 .catalog-stats {
   display: flex;
   align-items: center;
@@ -42,10 +118,6 @@
 .catalog-stats small {
   color: var(--muted);
   font-size: 12px;
-}
-#instruments-list .catalog-stats {
-  color: var(--muted);
-  gap: 36px;
 }
 .catalog-detail-summary {
   display: flex;
@@ -94,111 +166,10 @@
   flex-basis: var(--image-control-size);
 }
 @media (max-width: 600px) {
-  .instrument-catalog-row {
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) 18px;
-    gap: 12px;
-    padding: 16px;
-  }
-  .instrument-catalog-row .catalog-image {
-    width: 48px;
-    height: 48px;
-  }
-  .instrument-catalog-row .catalog-stats {
-    grid-column: 2;
-    grid-row: 2;
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .instrument-catalog-row > .icon {
-    grid-column: 3;
-    grid-row: 1;
-  }
   .catalog-stats > span {
     min-width: 65px;
   }
   .catalog-stats strong {
     font-size: 16px;
-  }
-}
-
-.catalog-card-content {
-  display: contents;
-}
-
-@media (max-width: 600px) {
-  #instruments-list .instrument-catalog-row {
-    grid-template-columns: 72px minmax(0, 1fr) 16px;
-    grid-template-rows: auto;
-    column-gap: 12px;
-    align-items: center;
-    padding: 12px;
-  }
-  #instruments-list .catalog-image {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: stretch;
-    width: 72px;
-    height: 100%;
-    min-height: 72px;
-    border-radius: 10px;
-    font-size: 22px;
-  }
-  #instruments-list .catalog-card-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 3px;
-    min-width: 0;
-    grid-column: 2;
-    grid-row: 1;
-  }
-  #instruments-list .instrument-row-info {
-    grid-column: 2;
-    grid-row: 1;
-    line-height: 1.25;
-    gap: 3px;
-  }
-  #instruments-list .instrument-row-info strong {
-    font-size: 20px;
-    line-height: 1.25;
-  }
-  #instruments-list .catalog-stats {
-    grid-column: 2;
-    grid-row: 2;
-    gap: 24px;
-    flex-wrap: nowrap;
-  }
-  #instruments-list .catalog-stats > span {
-    min-width: 0;
-    gap: 0;
-    line-height: 1.2;
-  }
-  #instruments-list .catalog-stats strong {
-    font-size: 15px;
-  }
-  #instruments-list .catalog-stats small {
-    font-size: 11px;
-  }
-  #instruments-list .instrument-catalog-row > .icon {
-    grid-row: 1;
-    align-self: center;
-  }
-}
-
-.instrument-inline-category {
-  display: block;
-  margin-top: 5px;
-}
-.instrument-category-dot {
-  display: none;
-}
-@media (max-width: 600px) {
-  .instrument-inline-category {
-    display: inline;
-    margin-top: 0;
-  }
-  .instrument-category-dot {
-    display: inline;
   }
 }
