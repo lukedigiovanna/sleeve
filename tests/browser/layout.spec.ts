@@ -78,23 +78,38 @@ test("header actions fit the viewport and retain accessible names", async ({
   const nav = header.getByRole("navigation", { name: "Main navigation" });
   const currentTab = nav.locator('[aria-current="page"]');
   await expect(currentTab).toHaveText("Library");
-  const underline = await currentTab.evaluate((link) => {
-    const style = getComputedStyle(link, "::after");
+  const divider = nav.locator(".main-nav-divider");
+  const underline = await divider.evaluate((element) => {
+    const style = getComputedStyle(element);
     return {
       height: style.height,
-      distanceFromCenter: parseFloat(style.top) - link.clientHeight / 2,
+      bottom: style.bottom,
+      mask: style.maskImage,
     };
   });
   expect(underline.height).toBe("2px");
-  expect(underline.distanceFromCenter).toBeGreaterThan(7);
-  expect(underline.distanceFromCenter).toBeLessThan(14);
+  expect(underline.bottom).toBe("-1px");
+  expect(underline.mask).toContain("linear-gradient");
 
   const navBounds = (await nav.boundingBox())!;
   const headerBounds = (await header.boundingBox())!;
+  expect(navBounds.y + navBounds.height + 1).toBeCloseTo(
+    headerBounds.y + headerBounds.height,
+    0,
+  );
   expect(navBounds.x + navBounds.width / 2).toBeCloseTo(
     headerBounds.x + headerBounds.width / 2,
     0,
   );
+
+  const artistsTab = nav.getByRole("link", { name: "Artists" });
+  await artistsTab.click();
+  await expect(artistsTab).toHaveAttribute("aria-current", "page");
+  const artists = (await artistsTab.boundingBox())!;
+  await expect
+    .poll(async () => (await divider.boundingBox())!.x)
+    .toBeCloseTo(artists.x, 0);
+  expect((await divider.boundingBox())!.width).toBeCloseTo(artists.width, 0);
 
   await add.click();
   await expect(page.locator("#editor")).toBeVisible();
@@ -102,4 +117,5 @@ test("header actions fit the viewport and retain accessible names", async ({
   await expect(page.locator("#editor")).toBeHidden();
   await profile.click();
   await expect(profile).toHaveAttribute("aria-current", "page");
+  await expect(divider).toBeHidden();
 });

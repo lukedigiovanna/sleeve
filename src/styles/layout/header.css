@@ -1,6 +1,7 @@
 .masthead {
+  --masthead-divider-width: 1px;
   background: var(--header);
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: var(--masthead-divider-width) solid var(--line-soft);
 }
 .masthead-inner {
   min-height: 64px;
@@ -27,28 +28,47 @@
   color: var(--color-accent-text);
 }
 .main-nav {
+  position: relative;
   display: flex;
 }
 .main-nav a {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   padding-inline: 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
 }
 .main-nav a[aria-current="page"] {
   color: var(--color-accent-text);
 }
-.main-nav a[aria-current="page"]::after {
-  content: "";
+.main-nav-divider {
   position: absolute;
-  inset-inline: 0;
-  top: calc(50% + 0.85em);
+  bottom: calc(-1 * var(--masthead-divider-width));
   height: 2px;
-  background: var(--color-accent);
+  pointer-events: none;
+  background-color: var(--color-accent);
+  background-image: var(--color-accent-spectrum, none);
+  /* Fixed positioning keeps the spectrum aligned across all tabs. */
+  background-attachment: fixed;
+  background-size: 100px 100%;
+  background-repeat: repeat-x;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    black 22%,
+    black 78%,
+    transparent
+  );
+}
+@media (prefers-reduced-motion: no-preference) {
+  .main-nav-divider {
+    transition:
+      left 300ms ease,
+      width 300ms ease;
+  }
 }
 .masthead :is(.top-add, .account-button) {
   display: grid;
@@ -90,8 +110,10 @@
   }
   .main-nav {
     position: absolute;
-    inset-inline-start: 50%;
-    transform: translateX(-50%);
+    inset: 0;
+    width: max-content;
+    margin-inline: auto;
+    gap: 4px;
   }
 }
 @media (max-width: 700px) {
