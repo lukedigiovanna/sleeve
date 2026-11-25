@@ -106,8 +106,7 @@ function renderGenreForm(genres: Genre[], item?: Genre): string {
             })
             .map(
               (genre) =>
-                /* HTML */ `<label
-                  class="button secondary compact genre-parent-option"
+                /* HTML */ `<label class="genre-parent-option"
                   ><input
                     type="checkbox"
                     aria-label="${escapeHtml(genre.name)}"
@@ -247,9 +246,7 @@ export class GenreFeature {
         });
 
     return /* HTML */ `<div class="instrument-picker">
-      <label class="field" for="genre-query"
-        ><span>Genres <span class="muted">(optional)</span></span></label
-      >
+      <h3><label for="genre-query">Genres</label></h3>
       <div id="genre-selected" aria-live="polite"></div>
       ${renderSuggestions()}
       <div class="catalog-search">

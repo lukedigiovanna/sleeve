@@ -227,19 +227,17 @@
 #genre-parent-options {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 5px;
   margin-top: 8px;
   max-height: 15rem;
   overflow-y: auto;
 }
-.genre-parent-option.button {
-  justify-content: flex-start;
+.genre-parent-option {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  min-height: 32px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
+  min-height: 44px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line-soft);
   font-size: 14px;
   text-align: left;
   white-space: normal;
@@ -249,13 +247,11 @@
   margin: 0;
   accent-color: var(--color-accent);
 }
-.genre-parent-option.button:hover {
-  border-color: var(--color-accent);
+.genre-parent-option:hover {
   background: var(--panel-hover);
 }
-.genre-parent-option.button:has(input:checked) {
-  border-color: var(--color-accent);
-  background: var(--panel-hover);
+.genre-parent-option:has(input:checked) {
+  background: var(--color-selected);
 }
 .genre-parent-option:focus-within {
   outline: 2px solid var(--sage);

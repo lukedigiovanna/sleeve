@@ -472,20 +472,31 @@ export class AlbumEditor {
     }
   }
 
+  private renderAddLinkButton(): string {
+    return /* HTML */ `<button
+      type="button"
+      class="icon-button"
+      data-action="add-link"
+      aria-label="Add music link"
+    >
+      ${icon("plus", 16)}
+    </button>`;
+  }
+
+  private renderMusicLinkRows(album: Partial<Album>): string {
+    return /* HTML */ `<div id="link-rows">
+      ${album.links?.length ? album.links.map(linkRow).join("") : linkRow()}
+    </div>`;
+  }
+
   private renderLinksForm(album: Partial<Album>): string {
     return /* HTML */ `<form id="links-form" data-id="${escapeHtml(album.id)}">
       <div class="dialog-body">
-        <p class="dialog-intro">${escapeHtml(album.title)}</p>
-        <div id="link-rows">
-          ${(album.links?.length ? album.links : [{}]).map(linkRow).join("")}
+        <div class="link-form-heading">
+          <p class="dialog-intro">${escapeHtml(album.title)}</p>
+          ${this.renderAddLinkButton()}
         </div>
-        <button
-          type="button"
-          class="button secondary compact"
-          data-action="add-link"
-        >
-          ${icon("plus", 15)} Add link manually
-        </button>
+        ${this.renderMusicLinkRows(album)}
         <p class="form-error" id="form-error" role="alert" hidden></p>
       </div>
       <div class="dialog-footer">
@@ -524,16 +535,27 @@ export class AlbumEditor {
               </div>`
             : ""
         }
-        ${isEdit ? "" : /* HTML */ `<p class="form-hint">Album title is required. The other fields are optional.</p>`}
-        <div class="field-grid">
-          ${field("Album title", "title", album.title, { attributes: 'required maxlength="150"', placeholder: "Album title" })}
-          ${field("Release year", "year", album.releaseYear, { type: "number", attributes: 'min="1000" max="9999" step="1"', placeholder: "e.g. 1976" })}
-        </div>
+        <section
+          class="album-details-form"
+          aria-labelledby="album-details-title"
+        >
+          <h3 id="album-details-title">Album details</h3>
+          <div class="field-grid">
+            ${field(/* HTML */ `Album title <span class="muted" aria-hidden="true">(required)</span>`, "title", album.title, { attributes: 'required maxlength="150"' })}
+            ${field("Release year", "year", album.releaseYear, { type: "number", attributes: 'min="1000" max="9999" step="1"' })}
+          </div>
+          ${field("Record label", "label", album.recordLabel, { attributes: 'maxlength="100"' })}
+          ${catalogImageField("Artwork URL", album.title ?? "", webUrl(album.artworkUrl)?.href, false, [], "artwork")}
+        </section>
         ${this.dependencies.pickers.artistPicker(album.artists ?? [])}
         ${this.dependencies.pickers.genrePicker(album.genres ?? [], () => this.suggestions("genre", album.genreSuggestions))}
         ${this.dependencies.pickers.instrumentPicker(album.instruments ?? [], () => this.suggestions("instrument", album.instrumentSuggestions))}
         <section class="link-form" aria-labelledby="music-links-title">
-          <h3 id="music-links-title">Music links</h3>
+          <div class="link-form-heading">
+            <h3 id="music-links-title">Music links</h3>
+            ${this.renderAddLinkButton()}
+          </div>
+          <!-- Apple Music search is currently broken. Restore these controls once it works again.
           <div class="apple-music-search">
             <button
               type="button"
@@ -549,19 +571,8 @@ export class AlbumEditor {
               aria-live="polite"
             ></div>
           </div>
-          <div id="link-rows">${(album.links ?? []).map(linkRow).join("")}</div>
-          <button
-            type="button"
-            class="button secondary compact"
-            data-action="add-link"
-          >
-            ${icon("plus", 15)} Add link manually
-          </button>
-        </section>
-        <section class="extra-fields" aria-labelledby="album-details-title">
-          <h3 id="album-details-title">More album details</h3>
-          ${field("Record label", "label", album.recordLabel, { attributes: 'maxlength="100"', placeholder: "Optional" })}
-          ${catalogImageField("Artwork URL", album.title ?? "", webUrl(album.artworkUrl)?.href, false, [], "artwork")}
+          -->
+          ${this.renderMusicLinkRows(album)}
         </section>
         <p class="form-error" id="form-error" role="alert" hidden></p>
       </div>

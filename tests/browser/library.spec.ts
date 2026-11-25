@@ -413,7 +413,10 @@ test("album fields and music links survive save and reload", async ({
   await page.locator('[name="title"]').fill('Regression "album" & friends');
   await page.locator('[name="label"]').fill("Test label");
 
-  await page.locator('[data-action="add-link"]').click();
+  await page
+    .getByRole("region", { name: "Music links" })
+    .getByRole("button", { name: "Add music link" })
+    .click();
   await page
     .locator('[name="linkUrl"]')
     .last()
@@ -761,6 +764,51 @@ test("unchanged dialog dismisses with Escape and restores focus", async ({
   await expect(opener).toBeFocused();
 });
 
+test("create album marks the required title and shows draft status after editing", async ({
+  page,
+  isMobile,
+}) => {
+  await page.getByRole("button", { name: "Add album", exact: true }).click();
+  await page.locator('[data-action="manual"]').click();
+  const form = page.locator("#album-form");
+  const details = form.getByRole("region", { name: "Album details" });
+  const title = details.getByRole("textbox", {
+    name: "Album title",
+    exact: true,
+  });
+  const heading = page.locator("#editor .dialog-heading");
+  const indicator = heading.getByRole("button", { name: "Draft status" });
+  const message = heading.locator("[data-draft-status]");
+  const links = form.getByRole("region", { name: "Music links" });
+
+  await expect(title).toHaveAttribute("required", "");
+  await expect(title.locator("..")).toContainText("Album title (required)");
+  await expect(form.getByText("(optional)", { exact: false })).toHaveCount(0);
+  await expect(
+    form.getByRole("button", { name: "Search Apple Music" }),
+  ).toHaveCount(0);
+  for (const name of ["title", "year", "label", "artwork"]) {
+    const input = details.locator(`[name="${name}"]`);
+    await expect(input).toHaveValue("");
+    await expect(input).toHaveAttribute("placeholder", "");
+  }
+  await expect(
+    links.getByRole("textbox", { name: "URL", exact: true }),
+  ).toHaveValue("");
+  await expect(
+    links.getByRole("textbox", { name: "Label", exact: true }),
+  ).toHaveValue("");
+  await expect(indicator).toBeHidden();
+
+  await title.fill("New album draft");
+  await expect(indicator).toBeVisible();
+  await expect(message).toHaveText("Draft saved on this device");
+  await expect(message).toHaveCSS("opacity", "0");
+  if (isMobile) await indicator.tap();
+  else await indicator.hover();
+  await expect(message).toHaveCSS("opacity", "1");
+});
+
 test("unfinished album edits recover after reload without changing saved data", async ({
   page,
 }) => {
@@ -1070,6 +1118,9 @@ test("blocked draft storage keeps the dirty editor open", async ({ page }) => {
   await page.locator('[name="title"]').fill("Unsaved draft");
   await expect(page.locator("[data-draft-status]")).toHaveText(
     "Draft could not be saved on this device",
+  );
+  await expect(page.getByRole("button", { name: "Draft status" })).toHaveText(
+    "!",
   );
   await page.locator('#album-form [data-action="close"]').click();
   await page.locator("[data-draft-keep]").click();

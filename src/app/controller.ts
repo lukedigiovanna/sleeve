@@ -153,18 +153,7 @@ export class AppController {
       onClose: () => {
         this.metadataSearch.cancel();
       },
-      onRendered: () => {
-        if (this.drafts.state.target && this.editor.querySelector("form")) {
-          if (!this.editor.querySelector("[data-draft-status]")) {
-            const status = document.createElement("p");
-            status.className = "form-hint draft-status";
-            status.dataset.draftStatus = "";
-            status.setAttribute("role", "status");
-            this.editor.querySelector(".dialog-body")?.prepend(status);
-          }
-          this.drafts.captureDraft();
-        }
-      },
+      onRendered: () => this.drafts.captureDraft(),
     });
 
     const editorDialog: EditorDialog = {
@@ -194,6 +183,7 @@ export class AppController {
       editor: this.editor,
       accountId,
       isSaving: () => this.library.saving,
+      hasChanges: () => this.dialogFormState() !== this.dialog.baseline,
       baseline: () => this.dialog.baseline,
       setBaseline: (value) => {
         this.dialog.baseline = value;

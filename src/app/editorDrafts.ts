@@ -22,6 +22,7 @@ export interface EditorDraftsDependencies {
   editor: HTMLDialogElement;
   accountId: string;
   isSaving: () => boolean;
+  hasChanges: () => boolean;
   baseline: () => string;
   serializeSelections: () => Pick<
     Draft,
@@ -129,21 +130,70 @@ export class EditorDraftController implements EditorDrafts {
     this.storeEditorDraft(true);
   }
 
+  private renderDraftStatus(stored: boolean): void {
+    const editor = this.ops.editor;
+    let indicator = editor.querySelector<HTMLElement>(".draft-indicator");
+    if (!indicator) {
+      indicator = document.createElement("div");
+      indicator.className = "draft-indicator";
+      indicator.innerHTML = /* HTML */ `<button
+          type="button"
+          class="icon-button draft-indicator-button"
+          aria-label="Draft status"
+          aria-describedby="editor-draft-message"
+          aria-controls="editor-draft-message"
+          aria-expanded="false"
+        >
+          ${icon("draft", 17)}
+          <span aria-hidden="true">!</span>
+        </button>
+        <span
+          id="editor-draft-message"
+          data-draft-status
+          role="status"
+        ></span>`;
+      const button = indicator.querySelector("button")!;
+      button.addEventListener("click", () => {
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        button.setAttribute("aria-expanded", String(!expanded));
+      });
+      button.addEventListener("blur", () => {
+        button.setAttribute("aria-expanded", "false");
+      });
+
+      const placement =
+        editor.querySelector(".listen-intro") ??
+        editor.querySelector(".dialog-heading-actions")!;
+      placement.append(indicator);
+    }
+
+    indicator.toggleAttribute("data-save-failed", !stored);
+    const status = indicator.querySelector("[data-draft-status]")!;
+    const message = stored
+      ? "Draft saved on this device"
+      : "Draft could not be saved on this device";
+    if (status.textContent !== message) status.textContent = message;
+  }
+
   private storeEditorDraft(open: boolean): boolean {
+    const target = this.state.target;
     if (
       this.state.restoring ||
       this.ops.isSaving() ||
       !this.ops.editor.open ||
-      !this.state.target
+      !target
     )
       return false;
     const form = this.ops.editor.querySelector("form");
     if (!form) return false;
+    const isImportReview = target.kind === "album" && target.mode === "review";
+    if (open && !this.draft && !isImportReview && !this.ops.hasChanges())
+      return false;
 
     const previous = this.draft;
     this.draft = {
       version: 1,
-      target: this.state.target,
+      target,
       hash: location.hash,
       open,
       baseline: this.ops.baseline(),
@@ -164,11 +214,7 @@ export class EditorDraftController implements EditorDrafts {
     const stored = this.writeDraft();
     if (!open && !stored) this.draft = previous;
 
-    const status = this.ops.editor.querySelector("[data-draft-status]");
-    const message = stored
-      ? "Draft saved on this device"
-      : "Draft could not be saved on this device";
-    if (status && status.textContent !== message) status.textContent = message;
+    this.renderDraftStatus(stored);
     this.resumeButton.hidden = true;
     return stored;
   }

@@ -163,11 +163,7 @@ export class InstrumentFeature {
     );
 
     return /* HTML */ `<div class="instrument-picker">
-      <label class="field" for="instrument-query"
-        ><span
-          >Featured instruments <span class="muted">(optional)</span></span
-        ></label
-      >
+      <h3><label for="instrument-query">Featured instruments</label></h3>
       <div id="instrument-selected" class="tags" aria-live="polite"></div>
       ${renderSuggestions()}
       <input

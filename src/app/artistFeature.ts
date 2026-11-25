@@ -191,9 +191,7 @@ export class ArtistFeature {
     });
 
     return /* HTML */ `<div class="instrument-picker">
-      <label class="field" for="artist-query"
-        ><span>Artists <span class="muted">(optional)</span></span></label
-      >
+      <h3><label for="artist-query">Artists</label></h3>
       <div id="artist-selected"></div>
       <div class="catalog-search">
         <input

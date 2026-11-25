@@ -83,14 +83,16 @@ export class Dialog implements DialogController {
           }
           <h2 id="dialog-title" tabindex="-1">${title}</h2>
         </div>
-        <button
-          class="icon-button close"
-          type="button"
-          aria-label="Close dialog"
-          data-action="close"
-        >
-          ${icon("close", 22)}
-        </button>
+        <div class="dialog-heading-actions">
+          <button
+            class="icon-button close"
+            type="button"
+            aria-label="Close dialog"
+            data-action="close"
+          >
+            ${icon("close", 22)}
+          </button>
+        </div>
       </div>
       ${content}`;
     // Picker controls finish rendering synchronously after showDialog returns.
