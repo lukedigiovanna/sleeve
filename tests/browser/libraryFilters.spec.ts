@@ -58,6 +58,15 @@ test("category pills preserve selections during search and return removed choice
     .locator(".library-toolbar .genre-filter-dropdown > summary")
     .click();
   const group = page.locator('.category-filter[data-category="genres"]');
+  const search = group.getByRole("searchbox");
+  const regularBorder = await search.evaluate(
+    (input) => getComputedStyle(input).borderColor,
+  );
+  await search.click();
+  await expect(search).toHaveCSS("outline-style", "none");
+  await expect(search).not.toHaveCSS("border-color", regularBorder);
+  await search.blur();
+  await expect(search).toHaveCSS("border-color", regularBorder);
   const results = group.locator("[data-category-results]");
   const selected = group.locator("[data-category-selected]");
   const first = results.getByRole("button").first();

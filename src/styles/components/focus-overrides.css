@@ -1,13 +1,33 @@
-/* Keyboard focus remains visible even when fields have custom borders. */
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-.category-options input:focus-visible + span {
-  outline: 2px solid var(--color-accent-hover);
-  outline-offset: 3px;
+@media (forced-colors: active) {
+  :root {
+    --field-focus-border: Highlight;
+  }
 }
+
+:is(
+  input:not(:where([type="checkbox"], [type="radio"], [type="range"])),
+  textarea,
+  select,
+  .listen-note-editor
+),
+.search-field,
+.select-wrap {
+  transition: border-color 160ms ease;
+}
+
+:is(
+  input:not(:where([type="checkbox"], [type="radio"], [type="range"])),
+  textarea,
+  select,
+  .listen-note-editor
+):focus,
 .search-field:focus-within,
-.select-wrap:focus-within,
+.select-wrap:focus-within {
+  outline: none;
+  border-color: var(--field-focus-border, var(--color-accent-text));
+}
+
+.category-options input:focus-visible + span,
 .rating-options label:has(input:focus-visible) {
   outline: 2px solid var(--color-accent-hover);
   outline-offset: 3px;

@@ -40,6 +40,13 @@ test("sign-in and demo entry retain their distinct navigation contracts", async 
   await mountAuth(page);
   await page.locator("#auth-demo").click();
   expect(await page.evaluate(() => (window as any).entries)).toEqual([false]);
+  const email = page.locator("#auth-email");
+  const regularBorder = await email.evaluate(
+    (input) => getComputedStyle(input).borderColor,
+  );
+  await email.focus();
+  await expect(email).toHaveCSS("outline-style", "none");
+  await expect(email).not.toHaveCSS("border-color", regularBorder);
   await submit(page);
   await page.evaluate(() => (window as any).finishAuth({ session: {} }));
   await expect(page.locator('[type="submit"]')).toBeEnabled();
