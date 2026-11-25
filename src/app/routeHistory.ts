@@ -2,7 +2,7 @@ import { routeHistorySchema, routeMarkerSchema } from "./storageValidation";
 import { makeId } from "./id";
 
 export interface RouteHistory {
-  arrive: () => number;
+  arrive: (initialScroll?: number) => number;
   replace: () => void;
   previous: () => string | undefined;
   saveScroll: () => void;
@@ -43,7 +43,7 @@ export function createRouteHistory(accountId: string): RouteHistory {
     }
   }
 
-  function arrive() {
+  function arrive(initialScroll = 0) {
     const marker = history.state?.[key];
     if (
       marker?.session === session &&
@@ -53,13 +53,13 @@ export function createRouteHistory(accountId: string): RouteHistory {
       return entries[cursor].scroll;
     }
     entries.splice(cursor + 1);
-    cursor = entries.push({ hash: location.hash, scroll: 0 }) - 1;
+    cursor = entries.push({ hash: location.hash, scroll: initialScroll }) - 1;
     history.replaceState(
       { ...history.state, [key]: { session, index: cursor } },
       "",
     );
     persist();
-    return 0;
+    return initialScroll;
   }
 
   arrive();

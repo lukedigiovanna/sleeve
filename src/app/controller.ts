@@ -122,6 +122,7 @@ export class AppController {
       accountEmail,
       main: this.main,
       library: () => this.library.data,
+      libraryRevision: () => this.library.revision,
       lists: {
         artists: (root) => this.artistFeature.renderList(root),
         genres: (root) => this.genreFeature.renderList(root),
@@ -574,9 +575,7 @@ export class AppController {
     }
 
     this.viewHash = location.hash;
-    const scroll = this.router.arrive();
-    this.router.render(true);
-    window.scrollTo(0, scroll);
+    this.router.navigate();
   }
 
   private draftCatalog(
@@ -780,6 +779,18 @@ export class AppController {
 
   public renderPreview(hash: string): HTMLElement {
     return this.router.renderPreview(hash);
+  }
+
+  public prepareTab(hash: string): HTMLElement {
+    return this.router.prepareTab(hash);
+  }
+
+  public restoreTabPreview(hash: string, element: HTMLElement): void {
+    this.router.restoreTabPreview(hash, element);
+  }
+
+  public tabScroll(hash: string): number {
+    return this.router.tabScroll(hash);
   }
 
   public dispose(): void {

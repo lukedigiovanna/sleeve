@@ -1,18 +1,29 @@
-/* Adjacent pages track the finger without changing the document's scroll height. */
-.swiping-pages {
+/* Clip both sides of the swipe without making the app a scroll container. */
+.swiping-pages #app {
   overflow-x: clip;
+}
+.swiping-pages {
   user-select: none;
   -webkit-user-select: none;
 }
-.swiping-pages main {
-  will-change: transform;
-}
-.swipe-preview {
+.swipe-viewport {
   position: fixed;
-  height: 100vh;
+  inset: 0;
   overflow: hidden;
   pointer-events: none;
+  z-index: 2;
+}
+.swipe-preview {
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  visibility: hidden;
   background: var(--bg);
   will-change: transform;
-  z-index: 2;
+}
+
+@media (max-width: 700px) {
+  .main {
+    touch-action: pan-y pinch-zoom;
+  }
 }
