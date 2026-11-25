@@ -68,13 +68,16 @@
     margin-bottom: 16px;
   }
   .album-hero {
-    padding: 18px;
+    padding: 26px 18px 18px;
     grid-template-columns: 1fr;
     gap: 14px;
     text-align: center;
   }
+  .album-hero .album-edit.button {
+    inset: 4px 4px auto auto;
+  }
   .album-hero > .album-artwork {
-    width: min(80%, 260px);
+    width: min(80%, 260px, 100% - 68px);
     padding-right: 0;
     justify-self: center;
   }
@@ -99,9 +102,8 @@
     line-height: 1.5;
     overflow-wrap: anywhere;
   }
-  .album-hero .tags {
+  .album-hero .detail-genres {
     justify-content: center;
-    margin-top: 6px;
   }
   .album-hero .detail-rating {
     justify-content: center;
@@ -110,20 +112,6 @@
   }
   .album-hero .detail-rating > .muted {
     font-size: 10px;
-  }
-  .album-hero .detail-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
-  }
-  .album-hero .detail-actions .button {
-    min-height: 44px;
-    padding-inline: 8px;
-  }
-  .album-hero .detail-actions .secondary:last-child {
-    grid-column: 1 / -1;
   }
   .detail-body {
     grid-template-columns: 1fr;

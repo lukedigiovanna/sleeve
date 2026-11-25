@@ -15,11 +15,12 @@
   text-underline-offset: 4px;
 }
 .album-hero {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(180px, 276px) minmax(0, 1fr);
   align-items: center;
   gap: clamp(16px, 2vw, 24px);
-  padding: 28px;
+  padding: 28px 54px 28px 28px;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background:
@@ -73,8 +74,16 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-.album-hero .tags {
+.detail-genres {
   margin-top: 6px;
+}
+.detail-genres .chip {
+  border-color: color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-accent-subtle) 55%, transparent);
+}
+.detail-genres .chip:is(:hover, :focus-visible) {
+  border-color: var(--color-border);
+  background: var(--color-accent-subtle);
 }
 .chip {
   max-width: 100%;
@@ -101,22 +110,19 @@
 .detail-rating .rating {
   font-size: 13px;
 }
-.detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+.album-edit.button {
+  position: absolute;
+  inset: 8px 8px auto auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
 }
-.album-music-shortcut {
-  padding: 9px 12px;
-  border-color: var(--line);
-  color: var(--ink);
-  background: var(--panel);
-  font-size: 12px;
-}
-.album-music-shortcut:hover {
-  border-color: var(--color-border);
+.album-edit.button:hover {
   background: var(--panel-hover);
+  color: var(--ink);
 }
 .detail-body {
   display: grid;
@@ -299,11 +305,14 @@
   background: var(--color-accent-subtle);
   color: var(--color-text);
 }
-.vinyl-art-button {
-  anchor-name: --vinyl-status;
+.album-art-actions {
   position: absolute;
   right: 6px;
   bottom: 6px;
+  display: flex;
+  gap: 6px;
+}
+.album-art-button {
   display: grid;
   place-items: center;
   width: 32px;
@@ -316,8 +325,11 @@
   box-shadow: 0 3px 9px var(--color-shadow);
   cursor: pointer;
 }
-.vinyl-art-button:hover {
+.album-art-button:hover {
   background: var(--panel-hover);
+}
+.vinyl-art-button {
+  anchor-name: --vinyl-status;
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .album-artwork[data-vinyl-status="owned"]:hover .album-vinyl,

@@ -353,6 +353,53 @@ test("album fields and music links survive save and reload", async ({
   await expect(page.locator('[name="vinylStatus"]')).toHaveCount(0);
 });
 
+test("album artwork actions offer the preferred listening link", async ({
+  page,
+}) => {
+  await page.locator('a[href="#album/seychelles"]').click();
+  const shortcut = page.locator(".album-listen-button");
+  const musicLinks = page.getByRole("region", { name: "Music links" });
+  const edit = musicLinks.getByRole("button", { name: "Edit music links" });
+
+  await expect(shortcut).toHaveAccessibleName(
+    "Listen on Apple Music (opens in a new tab)",
+  );
+  const vinyl = page.locator("#vinyl-status-button");
+  const vinylBounds = (await vinyl.boundingBox())!;
+  const shortcutBounds = (await shortcut.boundingBox())!;
+  expect(shortcutBounds.y).toBe(vinylBounds.y);
+  expect(shortcutBounds.x + shortcutBounds.width).toBeLessThan(vinylBounds.x);
+
+  await expect(musicLinks.getByRole("link").first()).toHaveAccessibleName(
+    "Apple Music (opens in a new tab)",
+  );
+
+  await edit.click();
+  const editor = page.locator("#editor");
+  const remove = editor.getByRole("button", {
+    name: "Remove link",
+    exact: true,
+  });
+  const save = editor.locator('button[type="submit"]');
+  await remove.first().click();
+  await save.click();
+
+  await expect(shortcut).toHaveAccessibleName(
+    "Listen on YouTube (opens in a new tab)",
+  );
+  await expect(shortcut).toHaveAttribute(
+    "href",
+    /^https:\/\/www\.youtube\.com\//,
+  );
+
+  await edit.click();
+  await remove.first().click();
+  await save.click();
+  await expect(shortcut).toHaveCount(0);
+  expect((await vinyl.boundingBox())!.x).toBe(vinylBounds.x);
+  await expect(page.locator(".album-sleeve .cover")).toBeVisible();
+});
+
 test("new listening entry survives reload", async ({ page }) => {
   await openAlbum(page);
   await page.locator('[data-action="listen"]').first().click();
@@ -1987,6 +2034,11 @@ test("artist links survive drafts and can be edited and removed", async ({
   await save.click();
 
   const links = page.getByRole("group", { name: "Artist links", exact: true });
+  const appleMusicLink = links.getByRole("link", { name: /Apple Music/ });
+  await expect(links.getByRole("link").first()).toHaveAttribute(
+    "href",
+    appleMusic,
+  );
   const wikipediaLink = links.getByRole("link", { name: /Wikipedia/ });
   await expect(wikipediaLink).toHaveAttribute("href", wikipedia);
   await expect(links.getByRole("heading")).toHaveCount(0);
@@ -1997,7 +2049,10 @@ test("artist links survive drafts and can be edited and removed", async ({
   const header = page.locator(".artist-page-heading");
   const portrait = await header.locator(".artist-portrait").boundingBox();
   const headerBox = await header.boundingBox();
-  expect(portrait!.height).toBeCloseTo(headerBox!.height, 1);
+  expect(portrait!.y + portrait!.height / 2).toBeCloseTo(
+    headerBox!.y + headerBox!.height / 2,
+    1,
+  );
   if (!isMobile) {
     await wikipediaLink.hover();
     await expect(label).toBeVisible();
@@ -2018,6 +2073,8 @@ test("artist links survive drafts and can be edited and removed", async ({
         name: "Browse albums by artists from United States",
       }),
     ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(appleMusicLink).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(wikipediaLink).toBeFocused();
     await expect(label).toBeVisible();

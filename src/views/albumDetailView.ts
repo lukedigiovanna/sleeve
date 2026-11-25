@@ -13,12 +13,14 @@ import {
   cover,
   latestRatedListen,
   orderedListens,
-  webUrl,
 } from "../components/presentation";
 import { escapeHtml } from "../components/html";
 import { instrumentUrl } from "../app/instruments";
 import { icon } from "../components/icons";
-import { renderExternalLinks } from "../components/externalLinks";
+import {
+  preferredListeningLink,
+  renderExternalLinks,
+} from "../components/externalLinks";
 import { formatListeningDate } from "../components/listeningDate";
 import { renderRating } from "../components/rating";
 
@@ -113,6 +115,7 @@ function vinylStatusText(status: Album["vinylStatus"]): string {
 
 function renderVinylControl(album: Album): string {
   const status = album.vinylStatus;
+  const listeningLink = preferredListeningLink(album.links);
 
   return /* HTML */ `<div
     class="album-artwork vinyl-control"
@@ -127,17 +130,33 @@ function renderVinylControl(album: Album): string {
     }
     <div class="album-sleeve">
       ${cover(album, true)}
-      <button
-        type="button"
-        id="vinyl-status-button"
-        class="vinyl-art-button"
-        popovertarget="vinyl-status-options"
-        aria-label="Track vinyl: ${vinylStatusText(status)}"
-        title="Track vinyl · ${vinylStatusText(status)}"
-        aria-describedby="vinyl-status-text"
-      >
-        ${icon(vinylStatusIcon(status), 18)}
-      </button>
+      <div class="album-art-actions">
+        ${
+          listeningLink
+            ? /* HTML */ `<a
+                class="album-art-button album-listen-button"
+                href="${escapeHtml(listeningLink.href)}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Listen on ${listeningLink.provider} (opens in a new tab)"
+                title="Listen on ${listeningLink.provider}"
+              >
+                ${icon("headphones", 19)}
+              </a>`
+            : ""
+        }
+        <button
+          type="button"
+          id="vinyl-status-button"
+          class="album-art-button vinyl-art-button"
+          popovertarget="vinyl-status-options"
+          aria-label="Track vinyl: ${vinylStatusText(status)}"
+          title="Track vinyl · ${vinylStatusText(status)}"
+          aria-describedby="vinyl-status-text"
+        >
+          ${icon(vinylStatusIcon(status), 18)}
+        </button>
+      </div>
     </div>
     <span id="vinyl-status-text" class="sr-only"
       >${vinylStatusText(status)}</span
@@ -199,9 +218,6 @@ export function renderAlbumDetailView(
   const additionalArtists = credits.filter(
     (artist) => artist.role !== "primary",
   );
-  const appleMusicUrl = album.links
-    .map((link) => webUrl(link.url))
-    .find((url) => url?.hostname.replace(/^www\./, "") === "music.apple.com");
   return /* HTML */ `<div class="detail">
     <a class="back-link" href="#">${icon("back", 17)} Back to library</a>
     <section class="album-hero" aria-labelledby="page-title">
@@ -224,27 +240,18 @@ export function renderAlbumDetailView(
           ${album.releaseYear ? /* HTML */ `<span class="detail-year"> · ${escapeHtml(album.releaseYear)}</span>` : ""}
           ${album.recordLabel ? /* HTML */ `<span class="detail-year"> · ${escapeHtml(album.recordLabel)}</span>` : ""}
         </p>
-        ${album.genres.length ? /* HTML */ `<div class="tags">${album.genres.map((g) => /* HTML */ `<a class="chip" href="${genreUrl(g.id)}">${escapeHtml(g.name)}</a>`).join("")}</div>` : ""}
+        ${album.genres.length ? /* HTML */ `<div class="tags detail-genres">${album.genres.map((genre) => /* HTML */ `<a class="chip" href="${genreUrl(genre.id)}">${escapeHtml(genre.name)}</a>`).join("")}</div>` : ""}
         ${rating !== undefined ? /* HTML */ `<div class="detail-rating">${renderRating(rating)}</div>` : ""}
-        <div class="detail-actions">
-          <button type="button" class="button secondary" data-action="edit">
-            ${icon("edit", 17)} Edit album
-          </button>
-          ${
-            appleMusicUrl
-              ? /* HTML */ `<a
-                  class="button album-music-shortcut"
-                  href="${escapeHtml(appleMusicUrl.href)}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Open in Apple Music (opens in a new tab)"
-                  title="Open in Apple Music"
-                  >${icon("music", 17)} Apple Music</a
-                >`
-              : ""
-          }
-        </div>
       </div>
+      <button
+        type="button"
+        class="button album-edit"
+        data-action="edit"
+        aria-label="Edit album"
+        title="Edit album"
+      >
+        ${icon("edit", 19)}
+      </button>
     </section>
     <div class="detail-body">
       <div>
