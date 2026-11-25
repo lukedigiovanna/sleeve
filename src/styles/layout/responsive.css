@@ -157,7 +157,6 @@
   .album-list .album-card {
     grid-template-columns: 52px minmax(0, 1fr) auto;
     gap: 10px;
-    min-height: 66px;
   }
   .album-list .album-genre,
   .album-list .card-arrow {

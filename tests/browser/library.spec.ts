@@ -1527,6 +1527,48 @@ test("catalog artist and instrument editors validate and retain details", async 
   );
 });
 
+test("artists without album credits can be deleted from their detail page", async ({
+  page,
+}) => {
+  await page.goto("/#artists");
+  await page
+    .locator(".artist-catalog-row")
+    .filter({ hasText: /\b[1-9]\d* albums?\b/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Delete artist", exact: true }),
+  ).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Back to artists" }).click();
+  await page.locator('[data-action="new-catalog-artist"]').click();
+  await page
+    .getByRole("textbox", { name: "Artist name" })
+    .fill("Unused artist");
+  await page.getByRole("button", { name: "Save artist" }).click();
+  await expect(page.locator("#page-title")).toHaveText("Unused artist");
+  await expect(page.getByText("No albums yet")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Edit artist" }).click();
+  const editor = page.getByRole("dialog", { name: "Edit artist" });
+  await expect(editor.getByText(/Delete artist/)).toHaveCount(0);
+  await editor.getByRole("button", { name: "Cancel" }).click();
+
+  const deleteArtist = page.getByRole("button", { name: "Delete artist" });
+  const confirmation = page.getByRole("dialog", { name: "Delete artist?" });
+  await deleteArtist.click();
+  await confirmation.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.locator("#page-title")).toHaveText("Unused artist");
+
+  await deleteArtist.click();
+  await confirmation.getByRole("button", { name: "Delete artist" }).click();
+  await expect(page).toHaveURL(/#artists$/);
+  await reloadDemo(page);
+  await expect(page.getByRole("link", { name: /Unused artist/ })).toHaveCount(
+    0,
+  );
+});
+
 test("artist and instrument draft selections stay separate from committed catalogs", async ({
   page,
 }) => {

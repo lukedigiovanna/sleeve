@@ -11,6 +11,18 @@
   margin-top: 28px;
 }
 
+@media (hover: hover) {
+  .artist-page-heading
+    + .instrument-albums
+    .button.danger:hover:not(:disabled) {
+    background: color-mix(
+      in srgb,
+      var(--color-error-bg),
+      var(--color-error) 16%
+    );
+  }
+}
+
 .artist-page-heading .catalog-image {
   width: 64px;
   height: 64px;
