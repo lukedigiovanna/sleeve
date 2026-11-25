@@ -365,56 +365,52 @@ export class ArtistFeature {
           ),
         );
         break;
-      case "delete-catalog-artist": {
-        const item = this.dependencies.library.artists.find(
-          (item) => artistUrl(item.id) === location.hash,
+      case "delete-catalog-artist":
+      case "confirm-delete-artist": {
+        const library = this.dependencies.library;
+        const artist = library.artists.find(
+          (item) => item.id === button.dataset.id,
         );
-        if (
-          !item ||
-          artistAlbums(this.dependencies.library.albums, item.id).length
-        )
-          break;
+        if (!artist || artistAlbums(library.albums, artist.id).length) break;
 
-        this.dependencies.dialog.show(
-          "Delete artist?",
-          /* HTML */ `<div class="dialog-body">
-              <p>Delete ${escapeHtml(item.name)} from your catalog?</p>
-            </div>
-            <div class="dialog-footer">
-              <button
-                type="button"
-                class="button secondary"
-                data-action="close"
-              >
-                Cancel</button
-              ><button
-                type="button"
-                class="button primary danger"
-                data-action="confirm-delete-artist"
-                data-id="${escapeHtml(item.id)}"
-              >
-                Delete artist
-              </button>
-            </div>`,
-          '[data-action="close"]',
+        if (button.dataset.action === "delete-catalog-artist") {
+          this.dependencies.dialog.show(
+            "Delete artist?",
+            /* HTML */ `<div class="dialog-body">
+                <p>Delete ${escapeHtml(artist.name)} from your catalog?</p>
+                <p id="form-error" class="form-error" role="alert" hidden></p>
+              </div>
+              <div class="dialog-footer">
+                <button
+                  type="button"
+                  class="button secondary"
+                  data-action="close"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="button primary danger"
+                  data-action="confirm-delete-artist"
+                  data-id="${escapeHtml(artist.id)}"
+                >
+                  Delete artist
+                </button>
+              </div>`,
+            '.dialog-footer [data-action="close"]',
+          );
+          break;
+        }
+
+        library.artists = library.artists.filter(
+          (item) => item.id !== artist.id,
+        );
+        void this.dependencies.persistence.finishCatalogSave(
+          "Artist deleted.",
+          "#artists",
         );
         break;
       }
-      case "confirm-delete-artist":
-        if (
-          !artistAlbums(this.dependencies.library.albums, button.dataset.id!)
-            .length
-        ) {
-          this.dependencies.library.artists =
-            this.dependencies.library.artists.filter(
-              (item) => item.id !== button.dataset.id,
-            );
-          this.dependencies.persistence.finishCatalogSave(
-            "Artist deleted.",
-            "#artists",
-          );
-        }
-        break;
       case "artist-sort": {
         const sort = selectBrowseSort(button, artistSorting, this.browse.sort);
         if (sort === undefined) return false;

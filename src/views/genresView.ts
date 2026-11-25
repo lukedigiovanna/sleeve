@@ -117,7 +117,7 @@ export function renderGenresView(
         ><input
           id="genres-search"
           type="search"
-          placeholder="Find a genre…"
+          placeholder="Search genres"
           value="${e(query)}" /></label
       >${renderCatalogFilters(/* HTML */ `<label><input id="genres-alphabetical" type="checkbox" ${alphabetical ? "checked" : ""} /> Alphabetical view</label><label><input id="genres-unused" type="checkbox" ${unused ? "checked" : ""} /> Unused only</label>`, Number(alphabetical) + Number(unused))}
     </div>

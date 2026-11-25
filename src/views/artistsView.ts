@@ -70,7 +70,7 @@ export function renderArtistsView(
         ><input
           id="artists-search"
           type="search"
-          placeholder="Find an artist…"
+          placeholder="Search artists"
           value="${e(state.query)}"
       /></label>
       ${renderCatalogFilters(controls, Object.keys(state.filters).length)}
@@ -222,24 +222,17 @@ export function renderArtistDetail(
         used.length
           ? renderAlbumGrid(used, layout)
           : /* HTML */ `<div class="empty detail-empty">
-              <h3>No albums yet</h3>
-              <p>
-                This artist stays in your catalog until you use or delete it.
-              </p>
+              <p>This artist has no albums. Would you like to delete it?</p>
+              <button
+                type="button"
+                class="button secondary danger"
+                data-action="delete-catalog-artist"
+                data-id="${e(item.id)}"
+              >
+                Delete artist
+              </button>
             </div>`
       }
     </section>
-    <div class="instrument-delete">
-      <button
-        class="button secondary danger"
-        data-action="delete-catalog-artist"
-        ${used.length ? 'disabled aria-describedby="artist-delete-help"' : ""}
-      >
-        Delete artist
-      </button>
-      <p id="artist-delete-help" class="muted">
-        ${used.length ? "Remove this artist from its albums before deleting it." : "Unused artists can be deleted from your catalog."}
-      </p>
-    </div>
   </section>`;
 }

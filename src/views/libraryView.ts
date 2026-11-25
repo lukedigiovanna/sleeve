@@ -51,7 +51,7 @@ export function renderLibraryView(
         ><input
           id="library-query"
           type="search"
-          placeholder="Search your library"
+          placeholder="Search albums"
           value="${escapeHtml(state.query)}"
       /></label>
       ${renderCatalogFilters(renderLibraryFilters(state.filters, data), Object.keys(state.filters).length)}

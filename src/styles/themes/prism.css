@@ -11,11 +11,11 @@
   --color-accent-foreground: #101820;
   --color-accent-subtle: #20343e;
   --color-border: #41465d;
-  --color-border-subtle: #2c3042;
+  --color-border-subtle: #272b3b;
   --color-hover: #262b3b;
   --color-selected: #263e4c;
   --color-rating: #e5b2ff;
-  --font-heading: "Space Grotesk", "Inter", Arial, sans-serif;
+  --font-heading: "Fraunces", "Bookman Old Style", Georgia, serif;
   --font-body: "Space Grotesk", "Inter", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
   --color-error: #ffb4bc;

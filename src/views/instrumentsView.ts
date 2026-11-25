@@ -75,7 +75,7 @@ export function renderInstrumentsView(
         ><input
           id="instruments-search"
           type="search"
-          placeholder="Find an instrument…"
+          placeholder="Search instruments"
           value="${escapeHtml(state.query)}"
       /></label>
       ${renderCatalogFilters(
