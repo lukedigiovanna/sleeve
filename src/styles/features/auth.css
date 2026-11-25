@@ -183,6 +183,3 @@
   text-align: center;
   color: var(--muted);
 }
-.account-button {
-  flex-shrink: 0;
-}

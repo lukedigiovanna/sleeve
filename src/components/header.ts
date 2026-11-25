@@ -67,11 +67,13 @@ export function renderHeader(): string {
         </nav>
         <button
           type="button"
-          class="button primary top-add"
+          class="button top-add"
           data-action="add"
           id="top-add"
+          aria-label="Add album"
         >
-          <span id="add-icon"></span>Add album
+          <span id="add-icon"></span
+          ><span class="top-add-label">Add album</span>
         </button>
       </div>
     </header>

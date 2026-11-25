@@ -174,14 +174,6 @@
   margin-top: 6px;
   font-size: 13px;
 }
-.account-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.account-button[aria-current="page"] {
-  color: var(--sage-strong);
-}
 @media (max-width: 900px) {
   .profile-charts {
     grid-template-columns: minmax(0, 1fr);

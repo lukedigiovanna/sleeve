@@ -19,6 +19,7 @@ import { initializeNavigation } from "./app/navigation";
 import { initializeApp } from "./app/controller";
 import type { LibraryData } from "./types/library";
 import { initializeMobileHeader } from "./components/header";
+import { icon } from "./components/icons";
 import { renderAuthView, initializeAuthView } from "./views/authView";
 
 updateThemeColor();
@@ -73,22 +74,14 @@ function enterLibrary(
   account.href = "#profile";
   if (isProfileRoute(location.hash))
     account.setAttribute("aria-current", "page");
-  account.className = "auth-text-button account-button";
-  account.innerHTML = /* HTML */ `<svg
-      class="icon"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.7"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 22v-2a8 8 0 0 1 16 0v2" />
-    </svg>
-    Profile`;
+  account.className = "account-button";
+  account.setAttribute("aria-label", "Profile");
+  account.innerHTML = /* HTML */ `
+    <span class="profile-slot-label" aria-hidden="true">Profile</span>
+    <span class="profile-avatar" aria-hidden="true"> ${icon("person")} </span>
+  `;
   document.querySelector(".masthead-inner")!.append(account);
+
   const handleAccount = async (event: MouseEvent): Promise<void> => {
     const button = (event.target as Element).closest<HTMLButtonElement>(
       '[data-action="profile-account"]',

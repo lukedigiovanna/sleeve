@@ -30,10 +30,6 @@
     width: 33px;
     height: 33px;
   }
-  .top-add {
-    min-height: 38px;
-    padding-inline: 10px;
-  }
   .toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;

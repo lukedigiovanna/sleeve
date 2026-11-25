@@ -34,6 +34,9 @@ const paths: Record<string, string> = {
   disc: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><path d="M7.3 9a5.6 5.6 0 0 1 3-2.3m6.4 8.3a5.6 5.6 0 0 1-3 2.3"/>',
   discogs:
     '<path d="M4.64 16.25A8.5 8.5 0 0 1 14.06 3.75M19.36 7.75A8.5 8.5 0 0 1 9.94 20.25"/><path d="M7.67 14.5A5 5 0 0 1 13.21 7.15M16.33 9.5A5 5 0 0 1 10.79 16.85"/><circle cx="12" cy="12" r=".65" fill="currentColor" stroke="none"/>',
+  "sleeve-add":
+    '<path d="M12 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-7M18 3v7m-3.5-3.5h7"/>',
+  person: '<circle cx="12" cy="8" r="4"/><path d="M4 22v-2a8 8 0 0 1 16 0v2"/>',
   "disc-wishlist":
     '<circle cx="10" cy="10" r="8"/><circle cx="10" cy="10" r="1.8"/><path d="M5.5 7.5a5.2 5.2 0 0 1 2.2-2M14.5 12.5a5.2 5.2 0 0 1-2.2 2"/><path d="M17 14c-3.4-4-7.3.5-4.4 3.5L17 22l4.4-4.5C24.3 14.5 20.4 10 17 14Z" fill="var(--panel)" stroke-linejoin="round"/>',
   edit: '<path d="m14.5 6.5 3 3M5 19l4-.8 10.1-10.1a2.1 2.1 0 0 0-3-3L6 15.2 5 19Z"/>',

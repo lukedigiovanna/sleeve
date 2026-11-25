@@ -40,3 +40,38 @@ test("album views default to list and remember layout choices independently", as
   });
   await expect(collection).toHaveClass(/album-grid/);
 });
+
+test("header actions fit the viewport and retain accessible names", async ({
+  page,
+  isMobile,
+}) => {
+  if (isMobile) await page.setViewportSize({ width: 320, height: 720 });
+
+  await page.goto("/");
+  await page.locator("#auth-demo").click();
+
+  const header = page.locator(".masthead");
+  const add = header.getByRole("button", { name: "Add album", exact: true });
+  const profile = header.getByRole("link", { name: "Profile", exact: true });
+
+  if (isMobile) {
+    await expect(add.locator(".top-add-label")).toBeHidden();
+    for (const [action, size] of [
+      [add, "40px"],
+      [profile, "44px"],
+    ] as const) {
+      await expect(action).toHaveCSS("width", size);
+      await expect(action).toHaveCSS("height", size);
+      await expect(action).toBeInViewport({ ratio: 1 });
+    }
+  } else {
+    await expect(add.locator(".top-add-label")).toBeVisible();
+  }
+
+  await add.click();
+  await expect(page.locator("#editor")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#editor")).toBeHidden();
+  await profile.click();
+  await expect(profile).toHaveAttribute("aria-current", "page");
+});
