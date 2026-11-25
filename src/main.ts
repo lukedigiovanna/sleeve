@@ -18,7 +18,7 @@ import { renderApp } from "./app/app";
 import { initializeNavigation } from "./app/navigation";
 import { initializeApp } from "./app/controller";
 import type { LibraryData } from "./types/library";
-import { initializeMobileHeader } from "./components/header";
+import { initializeHeader } from "./components/header";
 import { icon } from "./components/icons";
 import { renderAuthView, initializeAuthView } from "./views/authView";
 
@@ -60,7 +60,7 @@ function enterLibrary(
     cached,
     () => accountEmail,
   );
-  const disposeHeader = initializeMobileHeader();
+  const disposeHeader = initializeHeader();
   const disposeNavigation = initializeNavigation((hash) =>
     renderNavigationPage.renderPreview(hash),
   );
