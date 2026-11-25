@@ -1,15 +1,25 @@
-import type { CatalogSort } from "../components/sortOptions";
+import { compareSortValues, type SortSelection } from "../app/librarySort";
+import {
+  matchesInstrumentCategory,
+  type BrowseFilters,
+} from "../app/libraryCategoryFilters";
+import {
+  instrumentSorting,
+  renderSortDropdown,
+  type CatalogBrowseSort,
+} from "../components/sortOptions";
+import { renderCategoryFilter } from "../components/libraryCategoryFilters";
+import { renderFilterChips } from "../components/libraryFilters";
 import {
   catalogImage,
   catalogSummary,
-  catalogSort,
   catalogStats,
-  renderCatalogSummary,
-  type CatalogStats,
-  compareCatalog,
 } from "../components/catalogSummary";
 import { renderCatalogHeading } from "../components/catalogHeading";
-import { renderCatalogFilters } from "../components/catalogFilters";
+import {
+  renderCatalogFilters,
+  renderFilterControls,
+} from "../components/catalogFilters";
 import type { Album, Instrument, InstrumentCategory } from "../types/albums";
 import { escapeHtml } from "../components/html";
 import { icon } from "../components/icons";
@@ -22,12 +32,18 @@ import {
   instrumentUrl,
 } from "../app/instruments";
 import { matches } from "../app/search";
+import type { LibraryData } from "../types/library";
 
-export interface InstrumentFilters {
+export const instrumentFilterFields = ["instrumentCategory"] as const;
+export const defaultInstrumentSort = {
+  category: "count",
+  direction: "descending",
+} as const satisfies SortSelection<CatalogBrowseSort>;
+
+export interface InstrumentBrowseState {
   query: string;
-  category: string;
-  unused: boolean;
-  sort?: CatalogSort;
+  filters: Pick<BrowseFilters, (typeof instrumentFilterFields)[number]>;
+  sort: SortSelection<CatalogBrowseSort> | null;
 }
 
 export function categoryFields(
@@ -43,46 +59,40 @@ export function categoryFields(
   </fieldset>`;
 }
 
-export function renderInstrumentsView(filters: InstrumentFilters): string {
+export function renderInstrumentsView(
+  state: InstrumentBrowseState,
+  data: LibraryData,
+): string {
   return /* HTML */ `<section
-    class="instrument-page catalog-page"
+    class="instrument-page catalog-page instruments-page"
     aria-labelledby="page-title"
   >
     ${renderCatalogHeading("Instruments", "instrument")}
-    <div class="instrument-toolbar genre-toolbar">
+    <div class="toolbar library-toolbar">
       <label class="search-field"
         >${icon("search")}<span class="sr-only">Search instruments</span
         ><input
           id="instruments-search"
           type="search"
           placeholder="Find an instrument…"
-          value="${escapeHtml(filters.query)}"
+          value="${escapeHtml(state.query)}"
       /></label>
       ${renderCatalogFilters(
-        /* HTML */ `${catalogSort("instruments-sort", filters.sort ?? "updated", false)}<label
-            class="field"
-            ><span>Category</span
-            ><select id="instrument-category-filter">
-              <option value="">All categories</option>
-              ${instrumentCategories.map((category) => /* HTML */ `<option value="${category}" ${filters.category === category ? "selected" : ""}>${categoryLabel(category)}</option>`).join("")}
-              <option
-                value="uncategorized"
-                ${filters.category === "uncategorized" ? "selected" : ""}
-              >
-                Uncategorized
-              </option>
-            </select></label
-          >
-          <label
-            ><input
-              type="checkbox"
-              id="instruments-unused"
-              ${filters.unused ? "checked" : ""}
-            />
-            Unused only</label
-          >`,
-        Number(Boolean(filters.category)) + Number(filters.unused),
+        renderFilterControls(
+          renderCategoryFilter(
+            "instrumentCategory",
+            state.filters,
+            data,
+            "instrument",
+          ),
+          "instrument",
+        ),
+        Object.keys(state.filters).length,
       )}
+      ${renderSortDropdown(instrumentSorting, state.sort)}
+    </div>
+    <div id="instrument-filter-chips" class="library-filter-chips">
+      ${renderFilterChips(state.filters, data, "instrument")}
     </div>
     <p id="instruments-count" class="result-count" role="status"></p>
     <div id="instruments-list"></div>
@@ -90,57 +100,69 @@ export function renderInstrumentsView(filters: InstrumentFilters): string {
 }
 
 export function updateInstrumentsView(
-  instruments: Instrument[],
-  albums: Album[],
-  filters: InstrumentFilters,
+  { instruments, albums }: LibraryData,
+  { query, filters, sort }: InstrumentBrowseState,
   root: ParentNode = document,
 ): void {
+  const order = sort ?? defaultInstrumentSort;
+  const categoryIds = filters.instrumentCategory?.ids;
   const results = instruments
-    .map((item) => ({
-      item,
-      stats: catalogStats(albumsUsing(albums, item.id)),
-    }))
     .filter(
-      ({ item, stats }) =>
-        matches(filters.query, item.name) &&
-        (!filters.category ||
-          (filters.category === "uncategorized"
-            ? !item.categories.length
-            : item.categories.some(
-                (category) => category === filters.category,
-              ))) &&
-        (!filters.unused || !stats.count),
+      (item) =>
+        matches(query, item.name) &&
+        (!categoryIds?.length ||
+          categoryIds.some((id) =>
+            matchesInstrumentCategory(item.categories, id),
+          )),
     )
+    .map((item) => {
+      const stats = catalogStats(albumsUsing(albums, item.id));
+      return {
+        item,
+        name: item.name,
+        count: stats.count,
+        recent: stats.recent || null,
+        updated: stats.updated || null,
+      };
+    })
     .sort(
       (a, b) =>
-        compareCatalog(a.stats, b.stats, filters.sort ?? "updated") ||
-        a.item.name.localeCompare(b.item.name),
+        compareSortValues(
+          a[order.category],
+          b[order.category],
+          order.direction,
+        ) || a.name.localeCompare(b.name),
     );
+
   root.querySelector("#instruments-count")!.textContent =
     `${results.length} ${results.length === 1 ? "instrument" : "instruments"}`;
   root.querySelector("#instruments-list")!.innerHTML = results.length
-    ? /* HTML */ `<ul class="instrument-catalog-list">
-        ${results.map(({ item, stats }) => renderInstrumentRow(item, stats)).join("")}
+    ? /* HTML */ `<ul class="catalog-row-list instrument-catalog-list">
+        ${results.map(({ item, count }) => renderInstrumentRow(item, count)).join("")}
       </ul>`
     : renderInstrumentEmpty(Boolean(instruments.length));
 }
 
-function renderInstrumentRow(item: Instrument, stats: CatalogStats): string {
+function renderInstrumentRow(item: Instrument, count: number): string {
+  const categories =
+    item.categories.map(categoryLabel).join(", ") || "Uncategorized";
   return /* HTML */ `<li>
-    <a class="instrument-catalog-row" href="${instrumentUrl(item.id)}"
-      >${catalogImage(item.name, item.imageUrl, false, item.categories)}<span
-        class="catalog-card-content"
-        ><span class="instrument-row-info"
-          ><span
-            ><strong>${escapeHtml(item.name)}</strong
-            ><span class="muted instrument-inline-category">
-              <span class="instrument-category-dot">· </span>
-              ${item.categories.length ? item.categories.map(categoryLabel).join(", ") : "Uncategorized"}</span
-            ></span
-          ></span
-        >${renderCatalogSummary(stats, false)}</span
-      >${icon("chevron", 18)}</a
+    <a
+      class="catalog-row instrument-catalog-row"
+      href="${instrumentUrl(item.id)}"
     >
+      ${catalogImage(item.name, item.imageUrl, false, item.categories)}
+      <span class="catalog-row-identity instrument-row-identity">
+        <strong class="catalog-row-name">${escapeHtml(item.name)}</strong>
+        <span class="muted instrument-row-category"
+          >${escapeHtml(categories)}</span
+        >
+      </span>
+      <span class="catalog-row-count"
+        >${count} ${count === 1 ? "album" : "albums"}</span
+      >
+      ${icon("chevron", 16)}
+    </a>
   </li>`;
 }
 

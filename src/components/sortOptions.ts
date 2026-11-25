@@ -36,21 +36,26 @@ const librarySortLabels = {
 
 export type LibrarySort = keyof typeof librarySortLabels;
 
-const artistSortLabels = {
+const catalogBrowseSortLabels = {
   updated: "Last updated",
   recent: "Last logged",
   name: "Alphabetical",
   count: "Album count",
 };
-export type ArtistSort = keyof typeof artistSortLabels;
+export type CatalogBrowseSort = keyof typeof catalogBrowseSortLabels;
 
 export const librarySorting = {
   scope: "library",
   labels: librarySortLabels,
 } as const;
+export const instrumentSorting = {
+  scope: "instrument",
+  labels: catalogBrowseSortLabels,
+} as const;
+
 export const artistSorting = {
   scope: "artist",
-  labels: artistSortLabels,
+  labels: catalogBrowseSortLabels,
 } as const;
 
 interface BrowseSort<Category extends string> {
@@ -97,7 +102,8 @@ export function renderSortDropdown<Category extends string>(
   options: BrowseSort<Category>,
   selected: SortSelection<Category> | null,
 ): string {
-  const label = options.scope === "artist" ? "Sort artists" : "Sort albums";
+  const label =
+    options.scope === "library" ? "Sort albums" : `Sort ${options.scope}s`;
   return /* HTML */ `<details class="library-sort-dropdown">
     <summary class="button secondary library-sort" aria-label="${label}">
       ${icon("sort", 18)}<span class="library-sort-text">Sort</span>

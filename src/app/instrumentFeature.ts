@@ -1,7 +1,12 @@
 import { isInstrumentCategory } from "./instruments";
-import { isCatalogSort, type CatalogSort } from "../components/sortOptions";
+import { instrumentSorting, selectBrowseSort } from "../components/sortOptions";
+import {
+  searchCategoryFilter,
+  selectCategoryFilter,
+  type CategoryFilterControls,
+} from "../components/libraryCategoryFilters";
+import { updateBrowseFilters } from "../components/libraryFilters";
 import type { EditorDialog } from "./editorContracts";
-import { renderInstrumentsView } from "../views/instrumentsView";
 import { updateCatalogImage } from "../components/formFields";
 import type { DraftTarget } from "./editorDrafts";
 
@@ -12,18 +17,17 @@ import {
   catalogImageField,
 } from "../components/formFields";
 import { makeId } from "./id";
-import type {
-  Album,
-  AlbumInstrument,
-  Instrument,
-  InstrumentCategory,
-} from "../types/albums";
+import type { Album, AlbumInstrument, Instrument } from "../types/albums";
 import { icon } from "../components/icons";
 import { escapeHtml } from "../components/html";
 import { requiredNameSchema, optionalHttpUrlSchema } from "./formValidation";
 import { albumsUsing, instrumentUrl } from "./instruments";
 import {
   categoryFields,
+  defaultInstrumentSort,
+  instrumentFilterFields,
+  renderInstrumentsView,
+  type InstrumentBrowseState,
   updateInstrumentsView,
 } from "../views/instrumentsView";
 import { focusForTyping } from "./device";
@@ -40,21 +44,11 @@ export interface InstrumentFeatureDependencies {
     finishSave: (id: string, message: string) => Promise<void>;
     finishCatalogSave: (message: string, destination: string) => Promise<void>;
   };
-  library: {
-    readonly albums: LibraryData["albums"];
-    instruments: LibraryData["instruments"];
-  };
+  readonly library: LibraryData;
   navigation: {
     renderRoute: (focus?: boolean) => void;
     updateCatalogFilters: (id: string) => void;
   };
-}
-
-interface InstrumentListFilters {
-  query: string;
-  category: InstrumentCategory | "";
-  unused: boolean;
-  sort: CatalogSort;
 }
 
 function renderInstrumentForm(item?: Instrument): string {
@@ -116,11 +110,10 @@ export class InstrumentFeature {
   private readonly dependencies: InstrumentFeatureDependencies;
   private selectedInstruments: AlbumInstrument[] = [];
   private instrumentChoices: AlbumInstrument[] = [];
-  private readonly instrumentFilters: InstrumentListFilters = {
+  private readonly browse: InstrumentBrowseState = {
     query: "",
-    category: "",
-    unused: false,
-    sort: "updated",
+    filters: {},
+    sort: defaultInstrumentSort,
   };
 
   constructor(dependencies: InstrumentFeatureDependencies) {
@@ -299,11 +292,44 @@ export class InstrumentFeature {
     this.updateInstruments();
   }
 
+  private categoryControls(): CategoryFilterControls {
+    return {
+      scope: "instrument",
+      fields: instrumentFilterFields,
+      filters: this.browse.filters,
+      data: this.dependencies.library,
+    };
+  }
+
   private updateInstrumentList(): void {
-    updateInstrumentsView(
-      this.dependencies.library.instruments,
-      this.dependencies.library.albums,
-      this.instrumentFilters,
+    updateInstrumentsView(this.dependencies.library, this.browse);
+  }
+
+  private updateInstrumentFilters(): void {
+    const root = document.querySelector<HTMLElement>(".instruments-page")!;
+    updateBrowseFilters(
+      root,
+      this.browse.filters,
+      this.dependencies.library,
+      "instrument",
+    );
+    this.updateInstrumentList();
+  }
+
+  private clearInstrumentFilters(button: HTMLButtonElement): void {
+    this.browse.filters = {};
+
+    if (button.closest(".genre-filter-dropdown")) {
+      this.dependencies.navigation.updateCatalogFilters(
+        "instrument-instrumentCategory-search",
+      );
+      return;
+    }
+
+    this.browse.query = "";
+    this.dependencies.navigation.renderRoute();
+    focusForTyping(
+      document.querySelector<HTMLInputElement>("#instruments-search"),
     );
   }
 
@@ -405,11 +431,35 @@ export class InstrumentFeature {
         );
         break;
       }
-      case "clear-instrument-filters":
-        this.instrumentFilters.query = "";
-        this.instrumentFilters.category = "";
-        this.instrumentFilters.unused = false;
+      case "instrument-sort": {
+        const sort = selectBrowseSort(
+          button,
+          instrumentSorting,
+          this.browse.sort,
+        );
+        if (sort === undefined) return false;
+        this.browse.sort = sort;
+        this.updateInstrumentList();
+        break;
+      }
+      case "add-instrument-category":
+      case "remove-instrument-category":
+        if (!selectCategoryFilter(button, this.categoryControls()))
+          return false;
+        this.updateInstrumentFilters();
+        break;
+      case "remove-instrument-filter":
+        if (button.dataset.filter !== "instrumentCategory") return false;
+        delete this.browse.filters.instrumentCategory;
         this.dependencies.navigation.renderRoute();
+        document
+          .querySelector<HTMLElement>(
+            ".instruments-page .genre-filter-dropdown summary",
+          )
+          ?.focus();
+        break;
+      case "clear-instrument-filters":
+        this.clearInstrumentFilters(button);
         break;
       case "edit-instruments":
         if (album) this.openInstruments(album);
@@ -508,40 +558,21 @@ export class InstrumentFeature {
       updateCatalogImage(input);
 
     if (input.id === "instruments-search") {
-      this.instrumentFilters.query = input.value;
+      this.browse.query = input.value;
       this.updateInstrumentList();
     }
+
+    if (input.id === "instrument-instrumentCategory-search")
+      searchCategoryFilter(input, this.categoryControls());
 
     if (input.id === "instrument-query") this.updateInstruments();
   }
 
-  public change(input: HTMLInputElement): void {
-    if (input.id === "instruments-sort" && isCatalogSort(input.value)) {
-      this.instrumentFilters.sort = input.value;
-      this.updateInstrumentList();
-    }
-
-    if (
-      input.id === "instrument-category-filter" &&
-      (input.value === "" || isInstrumentCategory(input.value))
-    ) {
-      this.instrumentFilters.category = input.value;
-      this.dependencies.navigation.updateCatalogFilters(input.id);
-    }
-
-    if (input.id === "instruments-unused") {
-      this.instrumentFilters.unused = input.checked;
-      this.dependencies.navigation.updateCatalogFilters(input.id);
-    }
-  }
-
   public renderList(root: HTMLElement): void {
-    root.innerHTML = renderInstrumentsView(this.instrumentFilters);
-    updateInstrumentsView(
-      this.dependencies.library.instruments,
-      this.dependencies.library.albums,
-      this.instrumentFilters,
-      root,
+    root.innerHTML = renderInstrumentsView(
+      this.browse,
+      this.dependencies.library,
     );
+    updateInstrumentsView(this.dependencies.library, this.browse, root);
   }
 }

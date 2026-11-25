@@ -80,6 +80,10 @@ export class AppController {
     "clear-library-filters",
     "clear-library-year",
     "clear-instrument-filters",
+    "instrument-sort",
+    "add-instrument-category",
+    "remove-instrument-category",
+    "remove-instrument-filter",
     "close",
   ]);
   private readonly connection: LibraryConnection;
@@ -339,16 +343,8 @@ export class AppController {
         renderRoute: (focus) => this.router.render(focus),
         updateCatalogFilters: (id) => this.router.updateCatalogFilters(id),
       },
-      library: {
-        get albums() {
-          return controller.library.data.albums;
-        },
-        get instruments() {
-          return controller.library.data.instruments;
-        },
-        set instruments(value) {
-          controller.library.data.instruments = value;
-        },
+      get library() {
+        return controller.library.data;
       },
     });
   }
@@ -526,7 +522,6 @@ export class AppController {
     if (input.closest("#discovery-panel")) this.discovery.update();
     this.artistFeature.change(input);
     this.genreFeature.change(input);
-    this.instrumentFeature.change(input);
     this.router.change(input);
 
     if (input.name === "rating")

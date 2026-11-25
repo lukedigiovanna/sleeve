@@ -1,5 +1,12 @@
 import { findCountry, matchesCountry } from "./countries.ts";
 import type { LibraryData } from "../types/library";
+import type { BrowseScope } from "../components/catalogFilters";
+import type { LibraryFilters } from "./libraryFilters";
+import {
+  categoryLabel,
+  instrumentCategories,
+  isInstrumentCategory,
+} from "./instruments.ts";
 import { includesGenre } from "./genres.ts";
 
 export const categoryFields = [
@@ -8,7 +15,22 @@ export const categoryFields = [
   "country",
   "instruments",
 ] as const;
-export type CategoryField = (typeof categoryFields)[number];
+export type CategoryField =
+  (typeof categoryFields)[number] | "instrumentCategory";
+export type BrowseFilters = LibraryFilters & {
+  instrumentCategory?: { ids: string[] };
+};
+
+const instrumentCategoryIds = [...instrumentCategories, "uncategorized"];
+
+export function matchesInstrumentCategory(
+  categories: readonly string[],
+  id: string,
+): boolean {
+  return id === "uncategorized"
+    ? categories.length === 0
+    : categories.includes(id);
+}
 export interface CategoryChoice {
   id: string;
   name: string;
@@ -21,6 +43,10 @@ export function categoryName(
   id: string,
 ): string | undefined {
   if (field === "country") return findCountry(id)?.name;
+  if (field === "instrumentCategory")
+    return id === "uncategorized" || isInstrumentCategory(id)
+      ? categoryLabel(id)
+      : undefined;
   return data[field].find((item) => item.id === id)?.name;
 }
 
@@ -29,10 +55,23 @@ export function categoryChoices(
   field: CategoryField,
   selected: readonly string[],
   query: string,
-  scope: "library" | "artist" = "library",
+  scope: BrowseScope = "library",
 ): CategoryChoice[] {
   const selection = new Set(selected);
   const search = query.trim().toLocaleLowerCase();
+
+  if (field === "instrumentCategory") {
+    return instrumentCategoryIds
+      .filter((id) => !selection.has(id) && id.includes(search))
+      .map((id) => ({
+        id,
+        name: categoryLabel(id),
+        count: data.instruments.filter((item) =>
+          matchesInstrumentCategory(item.categories, id),
+        ).length,
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  }
 
   if (field === "country") {
     const counts = new Map<string, CategoryChoice>();

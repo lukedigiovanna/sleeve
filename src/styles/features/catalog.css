@@ -48,54 +48,6 @@
   gap: 12px;
   margin-bottom: 20px;
 }
-.instrument-catalog-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 16px;
-  display: grid;
-  gap: 12px;
-}
-.instrument-catalog-list li {
-  min-width: 0;
-}
-.instrument-catalog-row {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px;
-  background: var(--panel);
-}
-.instrument-catalog-row:hover {
-  background: var(--panel-hover);
-}
-.instrument-row-info {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.instrument-row-info strong {
-  font-size: 16px;
-}
-#instruments-list .instrument-row-info strong {
-  font-size: 20px;
-}
-.instrument-row-info .muted,
-.instrument-usage {
-  font-size: 12px;
-}
-.instrument-usage {
-  color: var(--color-accent-text);
-}
-.instrument-usage.unused {
-  color: var(--gold);
-}
-.instrument-catalog-row > .icon {
-  flex-shrink: 0;
-}
 .category-fields {
   padding: 0;
   margin: 22px 0;

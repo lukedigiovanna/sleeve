@@ -5,6 +5,7 @@ import {
   categoryFields,
   categoryName,
   type CategoryField,
+  type BrowseFilters,
 } from "../app/libraryCategoryFilters";
 import {
   renderFilterControls,
@@ -25,13 +26,14 @@ import {
   type NumericFilter,
 } from "../app/libraryFilters";
 
-const labels: Record<FilterField, string> = {
+const labels: Record<FilterField | "instrumentCategory", string> = {
   rating: "Rating",
   releaseYear: "Release year",
   genres: "Genre",
   artists: "Artist",
   country: "Country",
   instruments: "Featured instruments",
+  instrumentCategory: "Category",
   vinylStatus: "Vinyl status",
 };
 
@@ -312,11 +314,11 @@ function renderNumericChip(
 }
 
 export function renderFilterChips(
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   scope: BrowseScope = "library",
 ): string {
-  return filterFields
+  return [...filterFields, "instrumentCategory" as const]
     .filter((field) => filters[field] !== undefined)
     .map((field) => {
       const filter = filters[field]!;
@@ -360,7 +362,7 @@ export function renderFilterChips(
 
 export function updateBrowseFilters(
   root: ParentNode,
-  filters: LibraryFilters,
+  filters: BrowseFilters,
   data: LibraryData,
   scope: BrowseScope,
 ): void {
