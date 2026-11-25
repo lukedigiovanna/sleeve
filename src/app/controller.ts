@@ -253,7 +253,7 @@ export class AppController {
     });
 
     document.querySelector<HTMLElement>("#add-icon")!.innerHTML = icon(
-      "plus",
+      "sleeve-add",
       17,
     );
     this.listen();

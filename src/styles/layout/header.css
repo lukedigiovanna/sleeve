@@ -29,3 +29,75 @@
 .top-add {
   margin-left: auto;
 }
+.masthead .top-add {
+  --header-action-bg: color-mix(in srgb, var(--accent) 12%, var(--header));
+  background: var(--header-action-bg);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  color: var(--ink);
+}
+.masthead .top-add:hover {
+  --header-action-bg: color-mix(in srgb, var(--accent) 20%, var(--header));
+  border-color: var(--sage-strong);
+}
+.top-add .icon {
+  width: 21px;
+  height: 21px;
+  margin-inline: -2px;
+}
+.account-button {
+  display: grid;
+  flex: none;
+  border-radius: 22px;
+  font-size: 13px;
+}
+.profile-slot-label,
+.profile-avatar {
+  grid-area: 1 / 1;
+}
+/* Keep the original Profile footprint so the desktop navigation stays put. */
+.profile-slot-label {
+  visibility: hidden;
+  padding-left: 24px;
+}
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  justify-self: start;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 680;
+}
+.account-button:hover .profile-avatar {
+  background: var(--panel-hover);
+  color: var(--ink);
+}
+.account-button[aria-current="page"] .profile-avatar {
+  border-color: var(--sage-strong);
+  color: var(--color-accent-text);
+}
+@media (min-width: 701px) {
+  .account-button {
+    margin-left: -24px;
+    margin-right: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .masthead .top-add {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+  .top-add .icon {
+    width: 22px;
+    height: 22px;
+    margin-inline: 0;
+  }
+  .top-add-label,
+  .profile-slot-label {
+    display: none;
+  }
+}
