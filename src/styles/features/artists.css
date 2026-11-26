@@ -207,6 +207,7 @@
 .country-flag {
   display: inline-block;
   flex: none;
+  border-radius: 2px;
   object-fit: contain;
 }
 
