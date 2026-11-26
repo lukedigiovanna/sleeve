@@ -128,6 +128,7 @@ test("browse tabs share heading and toolbar spacing with flat results", async ({
           font: getComputedStyle(heading).font,
           top: bounds.top,
           gap: search.getBoundingClientRect().top - bounds.bottom,
+          searchHeight: search.getBoundingClientRect().height,
         };
       });
     const discover = page.getByRole("button", {
@@ -199,15 +200,21 @@ test("library toolbar stays on one row and the sort dropdown orders albums", asy
     expect(sort!.height).toBe(filters!.height);
     expect(sort!.y).toBe(filters!.y);
     expect(Math.abs(search!.y - sort!.y)).toBeLessThanOrEqual(1);
+    expect(search!.height).toBe(width <= 700 ? 34 : 32);
+    expect(sort!.height).toBe(search!.height);
     expect(sort!.x + sort!.width).toBeLessThanOrEqual(width);
     await expect(page.locator(".library-sort-text")).toBeVisible({
       visible: width > 700,
     });
 
     if (width <= 700) {
-      expect(filters!.width).toBe(40);
-      expect(sort!.width).toBe(40);
-      expect(sort!.height).toBe(40);
+      expect(filters!.width).toBe(34);
+      expect(sort!.width).toBe(34);
+      for (const icon of await page
+        .locator(".library-toolbar details > summary > .icon")
+        .all()) {
+        await expect(icon).toHaveCSS("width", "22px");
+      }
       const row = page.locator(".album-list .album-card").first();
       const toggle = await page
         .getByRole("button", { name: "List view" })

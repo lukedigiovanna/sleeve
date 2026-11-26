@@ -17,10 +17,8 @@ import {
   catalogStats,
 } from "../components/catalogSummary";
 import { renderCatalogHeading } from "../components/catalogHeading";
-import {
-  renderCatalogFilters,
-  renderFilterControls,
-} from "../components/catalogFilters";
+import { renderFilterControls } from "../components/catalogFilters";
+import { renderCatalogSearchRow } from "../components/catalogSearchRow";
 import type { Album, Instrument, InstrumentCategory } from "../types/albums";
 import { escapeHtml } from "../components/html";
 import { icon } from "../components/icons";
@@ -69,17 +67,12 @@ export function renderInstrumentsView(
     aria-labelledby="page-title"
   >
     ${renderCatalogHeading("Instruments", "instrument")}
-    <div class="toolbar library-toolbar">
-      <label class="search-field"
-        >${icon("search")}<span class="sr-only">Search instruments</span
-        ><input
-          id="instruments-search"
-          type="search"
-          placeholder="Search instruments"
-          value="${escapeHtml(state.query)}"
-      /></label>
-      ${renderCatalogFilters(
-        renderFilterControls(
+    ${renderCatalogSearchRow({
+      inputId: "instruments-search",
+      label: "Search instruments",
+      query: state.query,
+      filters: {
+        content: renderFilterControls(
           renderCategoryFilter(
             "instrumentCategory",
             state.filters,
@@ -88,10 +81,10 @@ export function renderInstrumentsView(
           ),
           "instrument",
         ),
-        Object.keys(state.filters).length,
-      )}
-      ${renderSortDropdown(instrumentSorting, state.sort)}
-    </div>
+        activeCount: Object.keys(state.filters).length,
+      },
+      sort: renderSortDropdown(instrumentSorting, state.sort),
+    })}
     <div id="instrument-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data, "instrument")}
     </div>
