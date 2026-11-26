@@ -30,7 +30,7 @@ async function fetchLibrary(): Promise<LibraryData> {
         supabase
           .from("artists")
           .select(
-            "id,name,sort_name,country,musicbrainz_id,photo_url,updated_at,artist_links(id,url,label)",
+            "id,name,sort_name,country,musicbrainz_id,photo_url,created_at,updated_at,artist_links(id,url,label)",
           )
           .order("created_at", { referencedTable: "artist_links" })
           .order("id", { referencedTable: "artist_links" })
@@ -66,6 +66,7 @@ async function fetchLibrary(): Promise<LibraryData> {
       country: row.country,
       musicbrainzId: row.musicbrainz_id,
       links: row.artist_links,
+      createdAt: new Date(row.created_at).toISOString(),
       updatedAt: new Date(row.updated_at).toISOString(),
     })),
     genres: genreRows.map((row) => ({

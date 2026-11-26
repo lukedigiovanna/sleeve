@@ -7,7 +7,7 @@ import {
 import {
   instrumentSorting,
   renderSortDropdown,
-  type CatalogBrowseSort,
+  type InstrumentBrowseSort,
 } from "../components/sortOptions";
 import { renderCategoryFilter } from "../components/libraryCategoryFilters";
 import { renderFilterChips } from "../components/libraryFilters";
@@ -37,12 +37,12 @@ export const instrumentFilterFields = ["instrumentCategory"] as const;
 export const defaultInstrumentSort = {
   category: "count",
   direction: "descending",
-} as const satisfies SortSelection<CatalogBrowseSort>;
+} as const satisfies SortSelection<InstrumentBrowseSort>;
 
 export interface InstrumentBrowseState {
   query: string;
   filters: Pick<BrowseFilters, (typeof instrumentFilterFields)[number]>;
-  sort: SortSelection<CatalogBrowseSort> | null;
+  sort: SortSelection<InstrumentBrowseSort> | null;
 }
 
 export function categoryFields(

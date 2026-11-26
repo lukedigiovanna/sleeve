@@ -43,9 +43,16 @@ test("timestamp reconciliation uses the final returned album row and leaves unsa
         listened_at: "normalized",
       },
     ],
-    artists: [{ id: "artist", updated_at: "2026-11-22T12:00:00+00:00" }],
+    artists: [
+      {
+        id: "artist",
+        created_at: "2026-11-20T12:00:00+00:00",
+        updated_at: "2026-11-22T12:00:00+00:00",
+      },
+    ],
   });
   assert.equal(next.albums[0].updatedAt, "touched");
+  assert.equal(next.artists[0].createdAt, "2026-11-20T12:00:00.000Z");
   assert.equal(next.artists[0].updatedAt, "2026-11-22T12:00:00.000Z");
   assert.deepEqual(next.albums[0].listeningEntries[0], {
     id: "listen",

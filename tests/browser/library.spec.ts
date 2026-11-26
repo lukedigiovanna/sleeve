@@ -1297,7 +1297,14 @@ test("artist countries link to a shareable Library filter with collaboration mat
     (data) => {
       localStorage.setItem("sleeve-demo-v1", JSON.stringify(data));
     },
-    { albums, artists: [otherArtist] },
+    {
+      albums,
+      artists: [
+        { ...japan, createdAt: "2026-11-02", updatedAt: "2026-11-04" },
+        { ...taiwan, createdAt: "2026-11-01", updatedAt: "2026-11-05" },
+        otherArtist,
+      ],
+    },
   );
   await reloadDemo(page);
 
@@ -1331,15 +1338,9 @@ test("artist countries link to a shareable Library filter with collaboration mat
   await expect(page.locator("#artists-count")).toHaveText("1 artist");
   const artistRow = page.locator(".artist-catalog-row");
   const artistName = artistRow.locator(".artist-catalog-name");
-  const flag = artistRow.getByRole("img", { name: "Taiwan" }).locator("img");
   await expect(artistName).toHaveText("Country test collaborator");
   await expect(artistName).toHaveCSS("font-size", "16px");
-  await expect(flag).toHaveCSS("height", "13px");
-  const nameBox = (await artistName.boundingBox())!;
-  const flagBox = (await flag.boundingBox())!;
-  expect(flagBox.y + flagBox.height / 2).toBeCloseTo(
-    nameBox.y + nameBox.height / 2,
-  );
+  await expect(artistRow.locator(".country-flag")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Remove Genre filter" }),
   ).toHaveText(genre);
@@ -1372,7 +1373,22 @@ test("artist countries link to a shareable Library filter with collaboration mat
   await expect(names.first()).toHaveText("Country test collaborator");
   await page.getByRole("button", { name: "Last logged, off" }).click();
   await expect(names.last()).toHaveText("Country test extra");
-  await page.getByRole("button", { name: "Last updated, off" }).click();
+  const dateAdded = page.getByRole("button", { name: /^Date added,/ });
+  await expect(dateAdded).toHaveAccessibleName("Date added, off");
+  await dateAdded.click();
+  await expect(dateAdded).toHaveAccessibleName("Date added, ascending");
+  await expect(names).toHaveText([
+    "Country test collaborator",
+    "Country test artist",
+    "Country test extra",
+  ]);
+  await dateAdded.click();
+  await expect(dateAdded).toHaveAccessibleName("Date added, descending");
+  await expect(names).toHaveText([
+    "Country test artist",
+    "Country test collaborator",
+    "Country test extra",
+  ]);
   await expect(
     page.getByRole("button", { name: "Last logged, off" }),
   ).toBeVisible();
@@ -1383,7 +1399,6 @@ test("artist countries link to a shareable Library filter with collaboration mat
   const collaborator = page.getByRole("link", {
     name: /Country test collaborator/,
   });
-  await expect(collaborator.getByRole("img", { name: "Taiwan" })).toBeVisible();
   await expect(
     collaborator.getByText("2 albums", { exact: true }),
   ).toBeVisible();
@@ -1395,9 +1410,11 @@ test("artist countries link to a shareable Library filter with collaboration mat
   const row = await collaborator.boundingBox();
   expect(row?.height).toBeLessThanOrEqual(56);
   await collaborator.click();
-  await page
-    .getByRole("link", { name: "Browse albums by artists from Taiwan" })
-    .click();
+  const countryLink = page.getByRole("link", {
+    name: "Browse albums by artists from Taiwan",
+  });
+  await expect(countryLink.locator(".country-flag")).toBeVisible();
+  await countryLink.click();
   await expect(page).toHaveURL(/#library\?country=TW$/);
   await expect(page.locator("#library-count")).toHaveText("2 of 3 albums");
   await expect(

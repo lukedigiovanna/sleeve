@@ -5,10 +5,14 @@ import { countryFlag } from "../components/countryFlag";
 import {
   artistSorting,
   renderSortDropdown,
-  type CatalogBrowseSort,
+  type ArtistBrowseSort,
 } from "../components/sortOptions";
 import { catalogImage, catalogStats } from "../components/catalogSummary";
-import { compareSortValues, type SortSelection } from "../app/librarySort";
+import {
+  compareSortValues,
+  dateAddedSortValue,
+  type SortSelection,
+} from "../app/librarySort";
 import { matchesAlbumGenres, type LibraryFilters } from "../app/libraryFilters";
 import { renderCategoryFilter } from "../components/libraryCategoryFilters";
 import { renderFilterChips } from "../components/libraryFilters";
@@ -37,12 +41,12 @@ export const artistFilterFields = ["country", "genres"] as const;
 export const defaultArtistSort = {
   category: "name",
   direction: "ascending",
-} as const satisfies SortSelection<CatalogBrowseSort>;
+} as const satisfies SortSelection<ArtistBrowseSort>;
 
 export interface ArtistsState {
   query: string;
   filters: Pick<LibraryFilters, (typeof artistFilterFields)[number]>;
-  sort: SortSelection<CatalogBrowseSort> | null;
+  sort: SortSelection<ArtistBrowseSort> | null;
 }
 
 export function renderArtistsView(
@@ -115,18 +119,13 @@ export function updateArtistsView(
     })
     .map((item) => {
       const stats = catalogStats(artistAlbums(data.albums, item.id));
-      if (
-        item.updatedAt &&
-        Date.parse(item.updatedAt) > (Date.parse(stats.updated) || 0)
-      )
-        stats.updated = item.updatedAt;
 
       return {
         item,
         count: stats.count,
         name: item.sortName || item.name,
         recent: stats.recent || null,
-        updated: stats.updated || null,
+        created: dateAddedSortValue(item.createdAt),
       };
     })
     .sort(
