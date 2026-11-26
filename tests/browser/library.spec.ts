@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
   await enterDemo(page);
 });
 
-test("catalog album headings keep compact layout toggles on the title row", async ({
+test("catalog album views keep compact layout toggles beside metadata", async ({
   page,
 }) => {
   for (const width of [1280, 393, 320]) {
@@ -35,24 +35,28 @@ test("catalog album headings keep compact layout toggles on the title row", asyn
       await page.locator(`[data-nav="${catalog}"]`).click();
       const singular = catalog.slice(0, -1);
       await page.locator(`main a[href^="#${singular}/"]`).first().click();
-      const heading = page.locator(".album-list-heading");
-      await expect(heading).toBeVisible();
-      const metadata = heading.locator(".detail-heading");
-      if (catalog === "artists") {
-        await expect(metadata).toHaveText("Albums");
-        const profile = await page
-          .locator(".artist-page-heading")
+      const isArtist = catalog === "artists";
+      const toolbar = page.locator(
+        isArtist ? ".artist-profile" : ".album-list-heading",
+      );
+      await expect(toolbar).toBeVisible();
+      const metadata = toolbar.locator(
+        isArtist ? ".artist-portrait" : ".detail-heading",
+      );
+      if (isArtist) {
+        await expect(
+          page.getByRole("heading", { name: "Albums", exact: true }),
+        ).toHaveCount(0);
+        const profile = await toolbar.boundingBox();
+        const albums = await page
+          .getByRole("region", { name: "Albums", exact: true })
           .boundingBox();
-        const sectionHeading = await heading.boundingBox();
-        expect(sectionHeading!.y - (profile!.y + profile!.height)).toBeCloseTo(
-          28,
-          0,
-        );
+        expect(albums!.y - (profile!.y + profile!.height)).toBeCloseTo(12, 0);
       } else {
         await expect(metadata.locator(".count-pill")).toHaveText(/^\d+$/);
       }
-      const title = await heading.locator(".detail-heading").boundingBox();
-      const chooser = heading.locator(".layout-toggle");
+      const title = await metadata.boundingBox();
+      const chooser = toolbar.locator(".layout-toggle");
       await expect(chooser).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
       await expect(
         chooser.getByRole("button", { name: "Grid view" }),
@@ -86,23 +90,11 @@ test("catalog album headings keep compact layout toggles on the title row", asyn
       expect(
         Math.abs(title!.y + title!.height / 2 - toggle!.y - toggle!.height / 2),
       ).toBeLessThan(1);
-      await heading
-        .getByRole("button", { name: "List view", exact: true })
-        .click();
-      await expect(
-        page
-          .locator(".album-list-heading")
-          .getByRole("button", { name: "List view", exact: true }),
-      ).toHaveAttribute("aria-pressed", "true");
-      await page
-        .locator(".album-list-heading")
-        .getByRole("button", { name: "Grid view", exact: true })
-        .click();
-      await expect(
-        page
-          .locator(".album-list-heading")
-          .getByRole("button", { name: "Grid view", exact: true }),
-      ).toHaveAttribute("aria-pressed", "true");
+      for (const name of ["List view", "Grid view"]) {
+        const button = chooser.getByRole("button", { name, exact: true });
+        await button.click();
+        await expect(button).toHaveAttribute("aria-pressed", "true");
+      }
     }
   }
 });
@@ -2265,7 +2257,17 @@ test("artist links survive drafts and can be edited and removed", async ({
   const wikipedia = "https://en.wikipedia.org/wiki/Alice_Coltrane";
   const appleMusic = "https://music.apple.com/us/artist/alice-coltrane/485970";
 
-  await form.getByLabel("Artist name").fill("Artist links test");
+  const artistName =
+    "The International Ensemble for Improvised Chamber Music and Contemporary Jazz with Strings and Percussion";
+  const photoUrl = "https://example.com/artist-photo.svg";
+  await page.route(photoUrl, (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="300" height="180" fill="navy"/></svg>',
+    }),
+  );
+  await form.getByLabel("Artist name").fill(artistName);
+  await form.getByRole("textbox", { name: "Photo URL" }).fill(photoUrl);
   await form.getByRole("combobox", { name: "Country" }).fill("USA");
   await form
     .getByRole("option", { name: "United States", exact: true })
@@ -2304,12 +2306,52 @@ test("artist links survive drafts and can be edited and removed", async ({
   const button = await wikipediaLink.boundingBox();
   expect(button!.width).toBe(isMobile ? 28 : 22);
   const header = page.locator(".artist-page-heading");
+  const heading = header.getByRole("heading", { name: artistName, level: 1 });
+  const titleBox = await heading.boundingBox();
   const portrait = await header.locator(".artist-portrait").boundingBox();
-  const headerBox = await header.boundingBox();
-  expect(portrait!.y + portrait!.height / 2).toBeCloseTo(
-    headerBox!.y + headerBox!.height / 2,
-    1,
+  const edit = header.getByRole("button", { name: "Edit artist" });
+  await expect(edit).toHaveText("");
+  await expect(edit).toHaveCSS("width", "27px");
+  await expect(edit).toHaveCSS("height", "27px");
+  const editBox = await edit.boundingBox();
+  expect(portrait!.y).toBeGreaterThan(titleBox!.y + titleBox!.height);
+  expect(editBox!.x).toBeGreaterThan(titleBox!.x + titleBox!.width);
+  expect(editBox!.y).toBeLessThan(titleBox!.y + titleBox!.height);
+  expect(portrait!.y).toBeGreaterThan(editBox!.y + editBox!.height);
+  if (isMobile) {
+    const lineHeight = await heading.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).lineHeight),
+    );
+    expect(titleBox!.height).toBeGreaterThan(lineHeight * 1.5);
+  }
+  expect(portrait!.width).toBe(isMobile ? 36 : 30);
+  await expect(header.locator(".artist-portrait")).toHaveCSS(
+    "border-radius",
+    "6px",
   );
+  const photoButton = header.getByRole("button", { name: "View artist photo" });
+  await photoButton.click();
+  const photoDialog = header.getByRole("dialog", {
+    name: `Photo of ${artistName}`,
+  });
+  const fullPhoto = photoDialog.getByRole("img", { name: artistName });
+  await expect(fullPhoto).toHaveAttribute("src", photoUrl);
+  await expect
+    .poll(async () => (await fullPhoto.boundingBox())?.width)
+    .toBeGreaterThan(portrait!.width);
+  await photoDialog.getByRole("button", { name: "Close photo" }).click();
+  await expect(photoDialog).toBeHidden();
+  await expect(photoButton).toBeFocused();
+  await photoButton.click();
+  await fullPhoto.click();
+  await expect(photoDialog).toBeVisible();
+  if (isMobile) {
+    await page.touchscreen.tap(5, 5);
+  } else {
+    await page.mouse.click(5, 5);
+  }
+  await expect(photoDialog).toBeHidden();
+  await expect(photoButton).toBeFocused();
   if (!isMobile) {
     await wikipediaLink.hover();
     await expect(label).toBeVisible();
@@ -2324,6 +2366,8 @@ test("artist links survive drafts and can be edited and removed", async ({
     );
     await page.mouse.move(0, 0);
     await page.getByRole("link", { name: "Back to artists" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(photoButton).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
       page.getByRole("link", {
@@ -2348,15 +2392,33 @@ test("artist links survive drafts and can be edited and removed", async ({
     "src",
     "/flags/us.svg",
   );
-  await expect(countryFlag).toHaveText("");
-  const flagBounds = await countryFlag.locator("img").boundingBox();
-  expect(flagBounds!.width).toBe(button!.width - 2);
-  expect(flagBounds!.height).toBe(button!.height - 2);
-  await expect(countryFlag.locator("img")).toHaveCSS("border-radius", "50%");
-  const divider = page
-    .locator(".artist-details")
-    .getByText("·", { exact: true });
+  const countryLabel = countryFlag.getByText(
+    "Browse albums from United States",
+  );
+  await expect(countryLabel).toBeHidden();
+  if (!isMobile) {
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Shift+Tab");
+    await expect(countryFlag).toBeFocused();
+    await expect(countryLabel).toBeVisible();
+  }
+  await expect(countryFlag.locator("img")).toHaveCSS("width", "19.5px");
+  await expect(countryFlag.locator("img")).toHaveCSS("height", "15px");
+  const divider = header.getByText("·", { exact: true });
   await expect(divider).toBeVisible();
+  const portraitImage = await photoButton.locator("img").elementHandle();
+  const flagImage = await countryFlag.locator("img").elementHandle();
+  const layoutToggle = header.getByRole("group", { name: "Albums layout" });
+  for (const name of ["Grid view", "List view"]) {
+    const layoutButton = layoutToggle.getByRole("button", { name });
+    await layoutButton.click();
+    await expect(layoutButton).toHaveAttribute("aria-pressed", "true");
+    await expect(layoutButton).toBeFocused();
+    expect(await portraitImage.evaluate((image) => image.isConnected)).toBe(
+      true,
+    );
+    expect(await flagImage.evaluate((image) => image.isConnected)).toBe(true);
+  }
   await expect(page.locator(".artist-page-heading .catalog-stats")).toHaveCount(
     0,
   );
@@ -2395,6 +2457,7 @@ test("artist links survive drafts and can be edited and removed", async ({
   await form.getByRole("button", { name: "Remove link", exact: true }).click();
   await save.click();
   await expect(links).toHaveCount(0);
+  await expect(countryFlag).toBeVisible();
   await expect(divider).toHaveCount(0);
 });
 

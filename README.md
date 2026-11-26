@@ -6,6 +6,8 @@
 
 A personal album listening journal. Find albums, log listens with ratings and notes, and browse your library by artist, genre, or instrument. Track your vinyl collection and wishlist, too.
 
+The [design guide](docs/design-guide.md) describes Sleeve’s editorial approach to catalog pages and interactions.
+
 ## Set up your own instance
 
 Requires Node.js 22.18+ and a [Supabase](https://supabase.com/) project for the database and email/password authentication.
