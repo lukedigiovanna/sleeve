@@ -148,7 +148,6 @@ export function updateArtistsView(
 }
 
 function renderArtistRow(item: Artist, count: number): string {
-  const country = findCountry(item.country);
   return /* HTML */ `<li>
     <a class="catalog-row artist-catalog-row" href="${artistUrl(item.id)}">
       ${catalogImage(item.name, item.photoUrl, true)}
@@ -156,7 +155,6 @@ function renderArtistRow(item: Artist, count: number): string {
         <strong class="catalog-row-name artist-catalog-name"
           >${e(item.name)}</strong
         >
-        ${country ? /* HTML */ `<span class="artist-catalog-country" role="img" aria-label="${e(country.name)}" title="${e(country.name)}">${countryFlag(country)}</span>` : ""}
       </span>
       <span class="catalog-row-count"
         >${count} ${count === 1 ? "album" : "albums"}</span
