@@ -17,7 +17,11 @@ import {
 import type { LibraryState } from "../views/libraryView";
 import { renderLibraryView, updateLibrary } from "../views/libraryView";
 import { renderAlbumDetailView } from "../views/albumDetailView";
-import { artistUrl, renderArtistDetail } from "../views/artistsView";
+import {
+  artistUrl,
+  renderArtistAlbums,
+  renderArtistDetail,
+} from "../views/artistsView";
 import { renderGenreDetail } from "../views/genresView";
 import { renderInstrumentDetail } from "../views/instrumentsView";
 import { albumUrl } from "../components/presentation";
@@ -400,8 +404,41 @@ export class AppRouter {
     this.dependencies.main.querySelector<HTMLElement>(`#${focusId}`)?.focus();
   }
 
+  private openArtistPhoto(button: HTMLButtonElement): void {
+    const dialog =
+      button.parentElement?.querySelector<HTMLDialogElement>("#artist-photo");
+    if (!dialog) return;
+
+    const isBackdrop = (event: MouseEvent): boolean => {
+      if (event.target !== dialog) return false;
+
+      const { left, right, top, bottom } = dialog.getBoundingClientRect();
+      return (
+        event.clientX < left ||
+        event.clientX >= right ||
+        event.clientY < top ||
+        event.clientY >= bottom
+      );
+    };
+
+    let startedOnBackdrop = false;
+    dialog.onpointerdown = (event) => {
+      startedOnBackdrop = isBackdrop(event);
+    };
+    dialog.onclick = (event) => {
+      if (startedOnBackdrop && isBackdrop(event)) dialog.close();
+    };
+    dialog.showModal();
+  }
+
   public click(button: HTMLButtonElement): boolean {
     switch (button.dataset.action) {
+      case "open-artist-photo":
+        this.openArtistPhoto(button);
+        return true;
+      case "close-artist-photo":
+        button.closest("dialog")?.close();
+        return true;
       case "open-profile-settings":
         this.dependencies.main
           .querySelector<HTMLDialogElement>("#profile-settings")
@@ -433,17 +470,39 @@ export class AppRouter {
         );
         return true;
       }
-      case "artist-layout":
-      case "genre-layout": {
-        const view =
-          button.dataset.action === "artist-layout" ? "artist" : "genre";
+      case "artist-layout": {
+        const library = this.dependencies.library();
+        const artist = library.artists.find(
+          (item) => artistUrl(item.id) === location.hash,
+        );
+        const albums = this.dependencies.main.querySelector<HTMLElement>(
+          "[data-artist-albums]",
+        );
+        if (!artist || !albums) return false;
+
         const layout = button.dataset.layout === "list" ? "list" : "grid";
-        this.detailLayouts[view] = layout;
-        saveLayout(view, layout);
+        if (layout !== this.detailLayouts.artist) {
+          this.detailLayouts.artist = layout;
+          saveLayout("artist", layout);
+          albums.innerHTML = renderArtistAlbums(artist, library.albums, layout);
+          for (const toggle of this.dependencies.main.querySelectorAll(
+            '[data-action="artist-layout"]',
+          )) {
+            toggle.setAttribute("aria-pressed", String(toggle === button));
+          }
+          this.dependencies.onRendered();
+        }
+        button.focus({ preventScroll: true });
+        return true;
+      }
+      case "genre-layout": {
+        const layout = button.dataset.layout === "list" ? "list" : "grid";
+        this.detailLayouts.genre = layout;
+        saveLayout("genre", layout);
         this.render();
         this.dependencies.main
           .querySelector<HTMLButtonElement>(
-            `[data-action="${view}-layout"][data-layout="${layout}"]`,
+            `[data-action="genre-layout"][data-layout="${layout}"]`,
           )
           ?.focus();
         return true;

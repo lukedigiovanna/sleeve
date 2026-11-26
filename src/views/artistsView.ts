@@ -13,13 +13,14 @@ import { matchesAlbumGenres, type LibraryFilters } from "../app/libraryFilters";
 import { renderCategoryFilter } from "../components/libraryCategoryFilters";
 import { renderFilterChips } from "../components/libraryFilters";
 import type { LibraryData } from "../types/library";
-import { renderAlbumListHeading } from "../components/albumListHeading";
+import { renderLayoutToggle } from "../components/layoutToggle";
 import { renderCatalogHeading } from "../components/catalogHeading";
 import { renderExternalLinks } from "../components/externalLinks";
 import { renderFilterControls } from "../components/catalogFilters";
 import { renderCatalogSearchRow } from "../components/catalogSearchRow";
 import type { Album, Artist } from "../types/albums";
 import { escapeHtml as e } from "../components/html";
+import { webUrl } from "../components/presentation";
 import { icon } from "../components/icons";
 import { renderAlbumGrid } from "../components/albumGrid";
 import { matches } from "../app/search";
@@ -173,7 +174,44 @@ function renderArtistEmpty(hasItems: boolean): string {
   </div>`;
 }
 
-export function renderArtistDetail(
+function renderArtistPortrait(item: Artist): string {
+  const photo = webUrl(item.photoUrl);
+  const thumbnail = catalogImage(item.name, item.photoUrl, true);
+  if (!photo) return thumbnail;
+
+  return /* HTML */ `<button
+      type="button"
+      class="artist-photo-button"
+      data-action="open-artist-photo"
+      aria-haspopup="dialog"
+      aria-label="View artist photo"
+    >
+      ${thumbnail}
+    </button>
+    <dialog
+      id="artist-photo"
+      class="artist-photo-dialog"
+      aria-label="Photo of ${e(item.name)}"
+    >
+      <button
+        type="button"
+        class="icon-button artist-photo-close"
+        data-action="close-artist-photo"
+        aria-label="Close photo"
+        autofocus
+      >
+        ${icon("close", 16)}
+      </button>
+      <img
+        src="${e(photo.href)}"
+        alt="${e(item.name)}"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      />
+    </dialog>`;
+}
+
+export function renderArtistAlbums(
   item: Artist,
   albums: Album[],
   layout = "list",
@@ -183,6 +221,26 @@ export function renderArtistDetail(
       (a.releaseYear ?? Infinity) - (b.releaseYear ?? Infinity) ||
       (a.sortTitle || a.title).localeCompare(b.sortTitle || b.title),
   );
+  if (used.length) return renderAlbumGrid(used, layout);
+
+  return /* HTML */ `<div class="empty detail-empty">
+    <p>This artist has no albums. Would you like to delete it?</p>
+    <button
+      type="button"
+      class="button secondary danger"
+      data-action="delete-catalog-artist"
+      data-id="${e(item.id)}"
+    >
+      Delete artist
+    </button>
+  </div>`;
+}
+
+export function renderArtistDetail(
+  item: Artist,
+  albums: Album[],
+  layout = "list",
+): string {
   const links = renderExternalLinks(item.links ?? [], "icons");
   const country = findCountry(item.country);
   return /* HTML */ `<section
@@ -190,45 +248,42 @@ export function renderArtistDetail(
     aria-labelledby="page-title"
   >
     <a class="back-link" href="#artists">${icon("back", 17)} Back to artists</a>
-    <div class="artist-page-heading">
-      ${catalogImage(item.name, item.photoUrl, true)}
+    <header class="artist-page-heading">
+      <h1 id="page-title">${e(item.name)}</h1>
       <div class="artist-profile">
-        <h1 id="page-title">${e(item.name)}</h1>
-        ${
-          country || links
-            ? /* HTML */ `<div class="artist-details">
-                ${country ? /* HTML */ `<a class="artist-country-link" href="${e(libraryUrl({ filters: { country: { ids: [country.id] } } }))}" aria-label="Browse albums by artists from ${e(country.name)}" title="${e(country.name)}">${countryFlag(country)}</a>` : ""}
-                ${country && links ? /* HTML */ `<span class="muted" aria-hidden="true">·</span>` : ""}
-                ${links}
-              </div>`
-            : ""
-        }
+        ${renderArtistPortrait(item)}
+        <div class="artist-details">
+          ${
+            country
+              ? /* HTML */ `<a
+                  class="artist-country-link artist-link-icon"
+                  href="${e(libraryUrl({ filters: { country: { ids: [country.id] } } }))}"
+                  aria-label="Browse albums by artists from ${e(country.name)}"
+                >
+                  ${countryFlag(country)}
+                  <span class="artist-link-label" aria-hidden="true">
+                    Browse albums from ${e(country.name)}
+                  </span>
+                </a>`
+              : ""
+          }
+          ${country && links ? /* HTML */ `<span class="muted" aria-hidden="true">·</span>` : ""}
+          ${links}
+        </div>
+        ${renderLayoutToggle(layout, "Albums layout", "artist-layout")}
       </div>
       <button
-        class="button secondary artist-edit"
+        type="button"
+        class="icon-button artist-edit"
         data-action="edit-catalog-artist"
         aria-label="Edit artist"
+        title="Edit artist"
       >
-        ${icon("edit", 16)} <span>Edit artist</span>
+        ${icon("edit", 19)}
       </button>
-    </div>
-    <section class="instrument-albums">
-      ${renderAlbumListHeading("Albums", layout, "artist-layout")}
-      ${
-        used.length
-          ? renderAlbumGrid(used, layout)
-          : /* HTML */ `<div class="empty detail-empty">
-              <p>This artist has no albums. Would you like to delete it?</p>
-              <button
-                type="button"
-                class="button secondary danger"
-                data-action="delete-catalog-artist"
-                data-id="${e(item.id)}"
-              >
-                Delete artist
-              </button>
-            </div>`
-      }
+    </header>
+    <section class="instrument-albums" aria-label="Albums" data-artist-albums>
+      ${renderArtistAlbums(item, albums, layout)}
     </section>
   </section>`;
 }

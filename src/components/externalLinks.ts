@@ -91,7 +91,7 @@ function renderLink(link: LinkPresentation, iconOnly = false): string {
       rel="noopener noreferrer"
       aria-label="${label} (opens in a new tab)"
     >
-      ${icon(link.iconName, 14)}
+      ${icon(link.iconName, 16)}
       <span class="artist-link-label" aria-hidden="true">${label}</span>
     </a>`;
 

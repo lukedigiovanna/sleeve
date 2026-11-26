@@ -1,14 +1,38 @@
 .artist-page-heading {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+}
+
+.artist-page-heading h1 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.artist-profile {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  min-height: 70px;
-  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.artist-edit {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  width: 27px;
+  height: 27px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  margin-block-start: 9px;
 }
 
 .artist-page-heading + .instrument-albums {
-  margin-top: 28px;
+  margin-top: 12px;
 }
 
 @media (hover: hover) {
@@ -24,15 +48,58 @@
 }
 
 .artist-page-heading .catalog-image {
-  width: 64px;
-  height: 64px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
-.instrument-page .artist-profile h1 {
-  margin: 0;
-  font-size: clamp(30px, 4vw, 44px);
-  line-height: 1.08;
-  overflow-wrap: anywhere;
+.artist-photo-button {
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.artist-photo-dialog {
+  width: fit-content;
+  min-width: 72px;
+  min-height: 72px;
+  max-width: calc(100% - 26px);
+  padding: 12px;
+}
+
+.artist-photo-dialog .artist-photo-close {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 18px;
+  inset-inline-end: 18px;
+  width: 41px;
+  border-color: #fff;
+  border-radius: 50%;
+  background: #202020;
+  color: #fff;
+}
+
+.artist-photo-dialog .artist-photo-close:is(:hover, :focus-visible) {
+  background: #000;
+  color: #fff;
+}
+
+.artist-photo-dialog img {
+  display: block;
+  max-width: 100%;
+  max-height: 72dvh;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+@media (pointer: coarse) {
+  .artist-page-heading .catalog-image {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .artist-details {
@@ -41,7 +108,6 @@
   align-items: center;
   gap: 4px 8px;
   font-size: 13px;
-  margin-top: 7px;
 }
 
 .album-list-heading {
@@ -62,25 +128,20 @@
   gap: 4px;
 }
 
-.artist-link-icon,
-.artist-country-link {
+.artist-link-icon {
   width: 22px;
   height: 22px;
-}
-
-.artist-link-icon {
   position: relative;
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 5px;
   color: var(--color-accent-text);
 }
 
 .artist-link-icon:is(:hover, :focus-visible) {
   background: var(--panel-hover);
-  border-color: var(--color-border);
 }
 
 .artist-link-label {
@@ -113,8 +174,7 @@
 }
 
 @media (pointer: coarse) {
-  .artist-link-icon,
-  .artist-country-link {
+  .artist-link-icon {
     width: 28px;
     height: 28px;
   }
@@ -123,7 +183,7 @@
 .artist-more-links summary {
   cursor: pointer;
   list-style: none;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -144,49 +204,20 @@
   background: var(--panel);
 }
 
-@media (max-width: 480px) {
-  .artist-page-heading {
-    gap: 8px;
-  }
-
-  .artist-page-heading + .instrument-albums .detail-heading {
-    gap: 6px;
-  }
-
-  .artist-page-heading + .instrument-albums h2 {
-    font-size: 23px;
-  }
-
-  .artist-edit {
-    width: 34px;
-    min-height: 34px;
-    padding-inline: 0;
-  }
-
-  .artist-edit span {
-    display: none;
-  }
-}
-
 .country-flag {
   display: inline-block;
   flex: none;
   object-fit: contain;
 }
 
-.artist-country-link {
-  display: grid;
-  place-items: center;
-  flex: none;
-  border-radius: 50%;
+.artist-country-link .country-flag {
+  width: 19.5px;
+  height: 15px;
 }
 
-.artist-country-link .country-flag {
-  display: block;
-  width: calc(100% - 2px);
-  height: calc(100% - 2px);
-  border-radius: inherit;
-  object-fit: cover;
+.artist-country-link .artist-link-label {
+  left: 0;
+  translate: none;
 }
 
 #catalog-artist-form .dialog-body {
