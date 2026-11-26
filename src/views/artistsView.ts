@@ -16,10 +16,8 @@ import type { LibraryData } from "../types/library";
 import { renderAlbumListHeading } from "../components/albumListHeading";
 import { renderCatalogHeading } from "../components/catalogHeading";
 import { renderExternalLinks } from "../components/externalLinks";
-import {
-  renderCatalogFilters,
-  renderFilterControls,
-} from "../components/catalogFilters";
+import { renderFilterControls } from "../components/catalogFilters";
+import { renderCatalogSearchRow } from "../components/catalogSearchRow";
 import type { Album, Artist } from "../types/albums";
 import { escapeHtml as e } from "../components/html";
 import { icon } from "../components/icons";
@@ -64,18 +62,16 @@ export function renderArtistsView(
     aria-labelledby="page-title"
   >
     ${renderCatalogHeading("Artists", "artist")}
-    <div class="toolbar library-toolbar">
-      <label class="search-field"
-        >${icon("search")}<span class="sr-only">Search artists</span
-        ><input
-          id="artists-search"
-          type="search"
-          placeholder="Search artists"
-          value="${e(state.query)}"
-      /></label>
-      ${renderCatalogFilters(controls, Object.keys(state.filters).length)}
-      ${renderSortDropdown(artistSorting, state.sort)}
-    </div>
+    ${renderCatalogSearchRow({
+      inputId: "artists-search",
+      label: "Search artists",
+      query: state.query,
+      filters: {
+        content: controls,
+        activeCount: Object.keys(state.filters).length,
+      },
+      sort: renderSortDropdown(artistSorting, state.sort),
+    })}
     <div id="artist-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data, "artist")}
     </div>

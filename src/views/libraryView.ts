@@ -1,5 +1,5 @@
 import { renderResultsMeta } from "../components/resultsMeta";
-import { renderCatalogFilters } from "../components/catalogFilters";
+import { renderCatalogSearchRow } from "../components/catalogSearchRow";
 import { renderLayoutToggle } from "../components/layoutToggle";
 import type { Layout } from "../app/layoutPreferences";
 import {
@@ -18,7 +18,6 @@ import {
   renderFilterChips,
 } from "../components/libraryFilters";
 import type { Album } from "../types/albums";
-import { escapeHtml } from "../components/html";
 import { icon } from "../components/icons";
 import { renderAlbumGrid } from "../components/albumGrid";
 import { matches } from "../app/search";
@@ -45,18 +44,17 @@ export function renderLibraryView(
         ${icon("sparkle", 16)} Discover
       </button>
     </div>
-    <div class="toolbar library-toolbar">
-      <label class="search-field"
-        >${icon("search")}<span class="sr-only">Search library</span
-        ><input
-          id="library-query"
-          type="search"
-          placeholder="Search albums"
-          value="${escapeHtml(state.query)}"
-      /></label>
-      ${renderCatalogFilters(renderLibraryFilters(state.filters, data), Object.keys(state.filters).length)}
-      ${renderSortDropdown(librarySorting, state.sort)}
-    </div>
+    ${renderCatalogSearchRow({
+      inputId: "library-query",
+      label: "Search library",
+      placeholder: "Search albums",
+      query: state.query,
+      filters: {
+        content: renderLibraryFilters(state.filters, data),
+        activeCount: Object.keys(state.filters).length,
+      },
+      sort: renderSortDropdown(librarySorting, state.sort),
+    })}
     <div id="library-filter-chips" class="library-filter-chips">
       ${renderFilterChips(state.filters, data)}
     </div>

@@ -342,10 +342,11 @@
   margin-top: 0;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 .toolbar.library-toolbar .search-field {
   grid-column: auto;
+  margin-inline-end: 4px;
 }
 .library-sort-dropdown {
   position: relative;
@@ -452,19 +453,22 @@
 .library-discover:hover {
   background: var(--panel-hover);
 }
-:is(.library-toolbar, .genre-toolbar) .search-field,
-:is(.library-toolbar, .genre-toolbar) details > summary.button {
-  min-height: 38px;
+:is(.library-toolbar, .genre-toolbar) {
+  --search-row-height: 32px;
 }
 :is(.library-toolbar, .genre-toolbar) .search-field {
+  min-height: var(--search-row-height);
+  padding-inline: 8px;
   border-color: var(--line-soft);
 }
 :is(.library-toolbar, .genre-toolbar) .search-field input {
-  padding-block: 5px;
+  padding-block: 4px;
 }
 :is(.library-toolbar, .genre-toolbar) details > summary.button {
   position: relative;
-  padding: 4px 10px;
+  min-height: var(--search-row-height);
+  gap: 5px;
+  padding: 3px 5px;
   background: transparent;
   border-color: transparent;
   color: var(--muted);
@@ -484,16 +488,19 @@
 }
 
 @media (max-width: 700px) {
-  :is(.library-toolbar, .genre-toolbar) .search-field,
-  :is(.library-toolbar, .genre-toolbar) details > summary.button {
-    min-height: 40px;
+  :is(.library-toolbar, .genre-toolbar) {
+    --search-row-height: 34px;
   }
   :is(.library-toolbar, .genre-toolbar) .search-field input {
     font-size: 16px;
   }
   :is(.library-toolbar, .genre-toolbar) details > summary.button {
-    width: 40px;
+    width: var(--search-row-height);
     padding: 0;
+  }
+  :is(.library-toolbar, .genre-toolbar) details > summary.button > .icon {
+    width: 22px;
+    height: 22px;
   }
   :is(.library-toolbar, .genre-toolbar)
     :is(.genre-filter-text, .library-sort-text) {

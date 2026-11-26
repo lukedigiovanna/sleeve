@@ -1,12 +1,11 @@
 import { renderResultsMeta } from "../components/resultsMeta";
 import { renderCatalogHeading } from "../components/catalogHeading";
-import { renderCatalogFilters } from "../components/catalogFilters";
+import { renderCatalogSearchRow } from "../components/catalogSearchRow";
 import type { Album, Genre } from "../types/albums";
 import { escapeHtml as e } from "../components/html";
 import { genrePaths, genreUrl, includesGenre } from "../app/genres";
 import { renderAlbumListHeading } from "../components/albumListHeading";
 import { renderAlbumGrid } from "../components/albumGrid";
-import { icon } from "../components/icons";
 function genreAlbumCount(count: number): string {
   return `${count} ${count === 1 ? "album" : "albums"}`;
 }
@@ -111,16 +110,31 @@ export function renderGenresView(
     .sort((a, b) => a.name.localeCompare(b.name));
   return /* HTML */ `<section class="instrument-page catalog-page genres-page">
     ${renderCatalogHeading("Genres", "genre")}
-    <div class="instrument-toolbar genre-toolbar">
-      <label class="search-field"
-        >${icon("search")}<span class="sr-only">Search genres</span
-        ><input
-          id="genres-search"
-          type="search"
-          placeholder="Search genres"
-          value="${e(query)}" /></label
-      >${renderCatalogFilters(/* HTML */ `<label><input id="genres-alphabetical" type="checkbox" ${alphabetical ? "checked" : ""} /> Alphabetical view</label><label><input id="genres-unused" type="checkbox" ${unused ? "checked" : ""} /> Unused only</label>`, Number(alphabetical) + Number(unused))}
-    </div>
+    ${renderCatalogSearchRow({
+      inputId: "genres-search",
+      label: "Search genres",
+      query,
+      filters: {
+        content: /* HTML */ `<label>
+            <input
+              id="genres-alphabetical"
+              type="checkbox"
+              ${alphabetical ? "checked" : ""}
+            />
+            Alphabetical view
+          </label>
+          <label>
+            <input
+              id="genres-unused"
+              type="checkbox"
+              ${unused ? "checked" : ""}
+            />
+            Unused only
+          </label>`,
+        activeCount: Number(alphabetical) + Number(unused),
+      },
+      toolbarClass: "instrument-toolbar genre-toolbar",
+    })}
     ${renderResultsMeta("genres", { count: `${results.length} ${results.length === 1 ? "genre" : "genres"}` })}
     <div class="genre-tree">
       ${
