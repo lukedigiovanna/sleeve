@@ -37,7 +37,7 @@ export interface Album {
 export type Artist = Pick<
   AlbumArtist,
   "id" | "name" | "sortName" | "country" | "musicbrainzId" | "photoUrl"
-> & { links?: ExternalLink[]; updatedAt?: string };
+> & { links?: ExternalLink[]; createdAt?: string; updatedAt?: string };
 
 export interface AlbumArtist {
   photoUrl?: string | null;

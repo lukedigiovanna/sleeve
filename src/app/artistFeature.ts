@@ -123,6 +123,7 @@ function readArtistForm(
   const links = readLinkFields(form, formError, existing?.links ?? []);
   if (!links) return;
 
+  const now = new Date().toISOString();
   return {
     id: form.dataset.id || makeId(),
     name,
@@ -131,7 +132,8 @@ function readArtistForm(
     country: findCountry(value("country"))?.id ?? null,
     musicbrainzId: existing?.musicbrainzId ?? null,
     links,
-    updatedAt: new Date().toISOString(),
+    createdAt: existing ? existing.createdAt : now,
+    updatedAt: now,
   };
 }
 

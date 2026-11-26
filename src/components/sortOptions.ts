@@ -36,13 +36,21 @@ const librarySortLabels = {
 
 export type LibrarySort = keyof typeof librarySortLabels;
 
-const catalogBrowseSortLabels = {
-  updated: "Last updated",
+const sharedCatalogBrowseSortLabels = {
   recent: "Last logged",
   name: "Alphabetical",
   count: "Album count",
 };
-export type CatalogBrowseSort = keyof typeof catalogBrowseSortLabels;
+const instrumentBrowseSortLabels = {
+  updated: "Last updated",
+  ...sharedCatalogBrowseSortLabels,
+};
+const artistBrowseSortLabels = {
+  created: librarySortLabels.created,
+  ...sharedCatalogBrowseSortLabels,
+};
+export type InstrumentBrowseSort = keyof typeof instrumentBrowseSortLabels;
+export type ArtistBrowseSort = keyof typeof artistBrowseSortLabels;
 
 export const librarySorting = {
   scope: "library",
@@ -50,12 +58,12 @@ export const librarySorting = {
 } as const;
 export const instrumentSorting = {
   scope: "instrument",
-  labels: catalogBrowseSortLabels,
+  labels: instrumentBrowseSortLabels,
 } as const;
 
 export const artistSorting = {
   scope: "artist",
-  labels: catalogBrowseSortLabels,
+  labels: artistBrowseSortLabels,
 } as const;
 
 interface BrowseSort<Category extends string> {

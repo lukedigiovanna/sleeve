@@ -59,7 +59,10 @@ export function commitAlbumArtists(
   for (const credit of selected) {
     let artist = findArtist(artists, credit);
     if (!artist) {
-      artist = artistIdentity(credit);
+      artist = {
+        ...artistIdentity(credit),
+        createdAt: new Date().toISOString(),
+      };
       artists.push(artist);
     }
     if (!credits.some((item) => item.id === artist.id))

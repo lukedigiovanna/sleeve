@@ -22,6 +22,14 @@ export function cycleSort<Category extends string>(
 
 export const cycleLibrarySort = cycleSort<LibrarySort>;
 
+export function dateAddedSortValue(
+  createdAt: string | undefined,
+): number | null {
+  if (typeof createdAt !== "string") return null;
+  const timestamp = Date.parse(createdAt);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
 function sortValue(
   album: Album,
   category: LibrarySort,
@@ -29,10 +37,8 @@ function sortValue(
   switch (category) {
     case "recent":
       return latest(album)?.listenedAt ?? null;
-    case "created": {
-      const createdAt = Date.parse(album.createdAt);
-      return Number.isFinite(createdAt) ? createdAt : null;
-    }
+    case "created":
+      return dateAddedSortValue(album.createdAt);
     case "title":
       return album.sortTitle || album.title;
     case "rating":
